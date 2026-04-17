@@ -25,11 +25,52 @@ export function ProgressPage() {
     return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="text-slate-400">Cargando progreso...</div></div>;
   }
 
-  const pretestData = analytics?.pretestVsPostest || [];
-  const weeklyProgress = analytics?.weeklyProgress || [];
-  const moduleScores = analytics?.moduleScores || [];
-  const xpHistory = analytics?.xpHistory || [];
-  const achievements = analytics?.achievements || [];
+  // === Map analytics API response to view model ===
+  const kpis = analytics?.kpis || {};
+
+  // Pretest vs Postest comparison
+  const skillImprovements = analytics?.skillImprovements || {};
+  const pretestData = Object.entries(skillImprovements).map(([skill, val]: [string, any]) => ({
+    skill,
+    pretest: val.before ?? 0,
+    postest: val.after ?? 0,
+  }));
+
+  const weeklyProgress = (analytics?.weeklyProgress || []).map((w: any) => ({
+    week: w.week,
+    liderazgo: w.leadership ?? w.liderazgo ?? w.avgScore ?? 0,
+    oral: w.oral ?? w.avgScore ?? 0,
+    escritura: w.written ?? w.escritura ?? w.avgScore ?? 0,
+  }));
+
+  // Module performance → module scores
+  const modulePerformance = analytics?.modulePerformance || [];
+  const moduleScores = modulePerformance.map((m: any) => ({
+    module: m.title || m.moduleId,
+    score: m.avgScore ?? 0,
+    attempts: m.attempts ?? 0,
+    best: m.bestScore ?? 0,
+  }));
+
+  // XP history from weekly progress
+  const xpHistory = (analytics?.weeklyProgress || []).map((w: any) => ({
+    date: w.week,
+    xp: w.xp ?? w.avgScore ?? 0,
+  }));
+
+  // Stats
+  const totalExercises = modulePerformance.reduce((s: number, m: any) => s + (m.attempts ?? 0), 0);
+  const totalModuleCount = analytics?.kpis?.totalModules ?? modulePerformance.length;
+  const bestModule = modulePerformance.reduce((best: any, m: any) => (!best || (m.bestScore ?? 0) > (best.bestScore ?? 0) ? m : best), null);
+  const improvement = analytics?.avgImprovement ? `${analytics.avgImprovement}%` : '0%';
+
+  const achievements = (analytics?.achievements || []).map((a: any) => ({
+    icon: a.icon || '🏅',
+    title: a.title,
+    desc: a.description,
+    earned: a.earned,
+    date: a.earnedAt ? new Date(a.earnedAt).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' }) : null,
+  }));
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -55,10 +96,10 @@ export function ProgressPage() {
         {/* KPI cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { icon: TrendingUp, label: 'Mejora promedio', value: analytics?.improvement || '0%', sub: 'vs pretest inicial', color: 'text-emerald-500 bg-emerald-50', trend: analytics?.improvement },
-            { icon: Zap, label: 'XP acumulados', value: String(user?.xp || 0), sub: 'Total', color: 'text-blue-500 bg-blue-50', trend: null },
-            { icon: CheckCircle, label: 'Ejercicios completados', value: analytics?.exercisesCompleted || '0/0', sub: analytics?.completionPct || '0% del programa', color: 'text-violet-500 bg-violet-50', trend: null },
-            { icon: Trophy, label: 'Mejor puntaje', value: analytics?.bestScore || '0', sub: analytics?.bestScoreContext || '', color: 'text-amber-500 bg-amber-50', trend: null },
+            { icon: TrendingUp, label: 'Mejora promedio', value: improvement, sub: 'vs pretest inicial', color: 'text-emerald-500 bg-emerald-50', trend: analytics?.avgImprovement },
+            { icon: Zap, label: 'XP acumulados', value: String(user?.xp || kpis.xp || 0), sub: 'Total', color: 'text-blue-500 bg-blue-50', trend: null },
+            { icon: CheckCircle, label: 'Ejercicios completados', value: `${totalExercises}/${totalModuleCount * 5}`, sub: `${totalModuleCount > 0 ? Math.round((totalExercises / (totalModuleCount * 5)) * 100) : 0}% del programa`, color: 'text-violet-500 bg-violet-50', trend: null },
+            { icon: Trophy, label: 'Mejor puntaje', value: String(bestModule?.bestScore ?? 0), sub: bestModule?.title ?? '', color: 'text-amber-500 bg-amber-50', trend: null },
           ].map((kpi, i) => {
             const Icon = kpi.icon;
             return (

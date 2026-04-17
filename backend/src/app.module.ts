@@ -8,6 +8,8 @@ import { AssessmentsModule } from './assessments/assessments.module';
 import { ResultsModule } from './results/results.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
+import { GamificationModule } from './gamification/gamification.module';
+import { TranscriptionModule } from './transcription/transcription.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { EvaluationModule } from './evaluation/evaluation.module';
     ResultsModule,
     DashboardModule,
     EvaluationModule,
+    GamificationModule,
+    TranscriptionModule,
   ],
 })
 export class AppModule {}

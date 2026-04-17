@@ -9,91 +9,6 @@ import {
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
-const scenarios = [
-  {
-    id: 1,
-    title: 'Conflicto en el equipo de desarrollo',
-    context: 'Eres el líder técnico de un equipo de 5 desarrolladores. Dos miembros del equipo, Ana y Carlos, están en conflicto constante sobre la arquitectura del proyecto. El plazo de entrega es en 10 días. El equipo entero está desmotivado por la tensión.',
-    situation: 'Ana propone usar microservicios para mayor escalabilidad. Carlos insiste en un monolito bien estructurado para cumplir el deadline. Los demás no expresan su opinión por miedo al conflicto.',
-    question: '¿Cómo actuarías como líder situacional en esta situación?',
-    options: [
-      {
-        id: 'A',
-        text: 'Convocas una reunión solo con Ana y Carlos, escuchas ambas perspectivas, facilitas un debate técnico estructurado y propones una solución de compromiso que considere tanto el plazo como la escalabilidad.',
-        style: 'Participativo / Coaching',
-      },
-      {
-        id: 'B',
-        text: 'Tomas una decisión unilateral basada en el plazo: "Usamos monolito ahora, refactorizamos después". Comunicas la decisión al equipo sin más debate.',
-        style: 'Directivo / Autoritario',
-      },
-      {
-        id: 'C',
-        text: 'Ignoras el conflicto y dejas que el equipo resuelva solo, esperando que el problema se solucione por sí mismo.',
-        style: 'Delegativo / Laissez-faire',
-      },
-      {
-        id: 'D',
-        text: 'Involucras a todo el equipo en la decisión, incluyendo a los que no hablan, creando un espacio seguro para que todos expresen su opinión técnica.',
-        style: 'Democrático / Inclusivo',
-      },
-    ],
-    bestAnswer: 'D',
-    secondAnswer: 'A',
-    feedback: {
-      A: { score: 82, type: 'good', title: 'Buena elección — Estilo Participativo', text: 'Resuelves el conflicto directamente involucrando a las partes. Sin embargo, dejar fuera al resto del equipo puede generar la misma desconexión que existe ahora. El conflicto técnico necesita visión de equipo completo.' },
-      B: { score: 55, type: 'warning', title: 'Decisión funcional pero limitada', text: 'El estilo directivo es adecuado en crisis extremas, pero aquí el problema es de dinámica de equipo, no solo técnico. Tomar la decisión solo puede generar resentimiento y no resuelve el conflicto de fondo.' },
-      C: { score: 20, type: 'error', title: 'Evitación del conflicto', text: 'Ignorar el conflicto raramente funciona. Con un plazo de 10 días, la tensión crecerá y el rendimiento disminuirá. El liderazgo situacional requiere intervención activa.' },
-      D: { score: 95, type: 'excellent', title: '¡Excelente! — Estilo Democrático e Inclusivo', text: 'Involucrar a todo el equipo crea sentido de pertenencia, aprovecha la inteligencia colectiva y resuelve la dinámica de miedo al conflicto. Es el enfoque más completo: técnico, humano y estratégico.' },
-    },
-    theory: 'Según el modelo de Liderazgo Situacional de Hersey y Blanchard, el estilo democrático (S3) es óptimo cuando el equipo tiene alta competencia técnica pero baja confianza/motivación situacional. El líder facilita, no impone.',
-    xp: 95,
-    level: 'Intermedio',
-    tags: ['Resolución de conflictos', 'Toma de decisiones', 'Dinámica de equipo'],
-  },
-  {
-    id: 2,
-    title: 'Nuevo integrante sin experiencia',
-    context: 'Acaban de asignarte un practicante, Miguel, que llega sin experiencia previa en desarrollo. El proyecto actual está en su fase crítica y tu equipo ya tiene carga de trabajo alta.',
-    situation: 'Miguel está motivado pero se siente perdido. Los demás del equipo no tienen tiempo para enseñarle. Tienes que decidir cómo integrarlo al equipo.',
-    question: '¿Cuál es el estilo de liderazgo más apropiado para Miguel en este momento?',
-    options: [
-      {
-        id: 'A',
-        text: 'Lo asignas a tareas de alta responsabilidad para que aprenda rápido "bajo presión". No hay tiempo para tutoriales.',
-        style: 'Delegativo',
-      },
-      {
-        id: 'B',
-        text: 'Le das instrucciones muy específicas, supervisas de cerca su trabajo, explicas el "qué" y el "cómo" en cada tarea asignada.',
-        style: 'Directivo / Instructivo (S1)',
-      },
-      {
-        id: 'C',
-        text: 'Lo ignoras durante la fase crítica y planeas integrarlo después cuando haya más tiempo.',
-        style: 'Pasivo',
-      },
-      {
-        id: 'D',
-        text: 'Le asignas un mentor del equipo, defines objetivos de aprendizaje graduales y revisas su progreso semanalmente.',
-        style: 'Coaching / Desarrollo',
-      },
-    ],
-    bestAnswer: 'B',
-    secondAnswer: 'D',
-    feedback: {
-      A: { score: 25, type: 'error', title: 'Alto riesgo', text: 'Poner a alguien sin experiencia en tareas críticas sin dirección es una receta para errores y frustración. Esto puede afectar tanto al proyecto como a la confianza de Miguel.' },
-      B: { score: 90, type: 'excellent', title: '¡Correcto! — Estilo Directivo S1', text: 'Para una persona con alta motivación pero baja competencia (D1 en el modelo de Hersey), el estilo directivo es el más efectivo. Proporciona estructura clara, guía específica y supervisión cercana.' },
-      C: { score: 10, type: 'error', title: 'Desintegración del nuevo miembro', text: 'Ignorar a un miembro nuevo daña severamente su motivación y sentido de pertenencia. En liderazgo situacional, cada persona necesita atención apropiada a su nivel.' },
-      D: { score: 78, type: 'good', title: 'Buen enfoque de desarrollo', text: 'El coaching es valioso a largo plazo, pero en el contexto actual de alta carga y fase crítica, el estilo directivo es más inmediatamente efectivo para alguien que necesita guía paso a paso.' },
-    },
-    theory: 'El modelo D1-D4 de desarrollo indica que una persona nueva (D1: alta motivación, baja competencia) necesita el estilo S1 (Directivo): instrucciones claras, supervisión frecuente y alta orientación a la tarea.',
-    xp: 88,
-    level: 'Básico',
-    tags: ['Onboarding', 'Estilos de liderazgo', 'Desarrollo de personas'],
-  },
-];
-
 type FeedbackType = 'excellent' | 'good' | 'warning' | 'error';
 
 const feedbackConfig: Record<FeedbackType, { bg: string; border: string; icon: LucideIcon; iconColor: string }> = {
@@ -130,8 +45,15 @@ export function LeadershipModulePage() {
     if (!selectedOption || submitting) return;
     setSubmitting(true);
     try {
-      const result = await api.results.submitScenario(scenario.id, selectedOption);
-      setFeedbackData(result.feedback?.[selectedOption] || scenario.feedback?.[selectedOption] || { score: result.score, type: result.score >= 85 ? 'excellent' : result.score >= 65 ? 'good' : result.score >= 40 ? 'warning' : 'error', title: 'Resultado', text: result.feedbackText || '' });
+      const response = await api.results.submitScenario(scenario.id, selectedOption);
+      const evaluation = response.evaluation || {};
+      // Use evaluation feedback if available, else fall back to scenario's local feedback
+      setFeedbackData(evaluation.feedback || scenario.feedback?.[selectedOption] || {
+        score: evaluation.score ?? response.result?.score ?? 0,
+        type: (evaluation.score ?? 0) >= 85 ? 'excellent' : (evaluation.score ?? 0) >= 65 ? 'good' : (evaluation.score ?? 0) >= 40 ? 'warning' : 'error',
+        title: evaluation.styleLabel || 'Resultado',
+        text: evaluation.theory || '',
+      });
       setShowFeedback(true);
       refreshUser();
     } catch (e) {

@@ -26,8 +26,8 @@ export function ModulesPage() {
     return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="text-slate-400">Cargando módulos...</div></div>;
   }
 
-  const totalExercises = modules.reduce((acc, m) => acc + (m.completedScenarios || 0), 0);
-  const totalAll = modules.reduce((acc, m) => acc + (m.totalScenarios || 0), 0);
+  const totalExercises = modules.reduce((acc, m) => acc + (m.completedItems || 0), 0);
+  const totalAll = modules.reduce((acc, m) => acc + (m.totalItems || 0), 0);
   const avgScore = modules.filter(m => m.avgScore > 0).reduce((acc, m, _, arr) => acc + m.avgScore / arr.length, 0).toFixed(1);
   return (
     <div className="min-h-screen bg-slate-50">
@@ -116,7 +116,7 @@ export function ModulesPage() {
                   <div className="flex items-center gap-5 text-sm text-slate-500 mb-5">
                     <div className="flex items-center gap-1.5">
                       <BookOpen className="w-4 h-4" />
-                      {mod.completedScenarios || 0}/{mod.totalScenarios || 0} ejercicios
+                      {mod.completedItems || 0}/{mod.totalItems || 0} ejercicios
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-4 h-4" />
@@ -125,7 +125,7 @@ export function ModulesPage() {
                     {!mod.locked && (mod.avgScore || 0) > 0 && (
                       <div className="flex items-center gap-1.5">
                         <Star className="w-4 h-4 text-amber-400" />
-                        {mod.avgScore}/10
+                        {Math.round(mod.avgScore)}/100
                       </div>
                     )}
                   </div>

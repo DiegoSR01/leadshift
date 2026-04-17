@@ -7,12 +7,15 @@ import { UserProgress } from '../entities/user-progress.entity';
 import { ResultsService } from './results.service';
 import { ResultsController } from './results.controller';
 import { EvaluationModule } from '../evaluation/evaluation.module';
+import { GamificationModule } from '../gamification/gamification.module';
 import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Result, Scenario, Exercise, UserProgress]),
     EvaluationModule,
+    GamificationModule,
+    UsersModule,
     UsersModule,
   ],
   controllers: [ResultsController],

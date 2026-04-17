@@ -8,6 +8,7 @@ import { UserProgress } from '../entities/user-progress.entity';
 import { LeadershipService } from '../evaluation/leadership.service';
 import { OralCommunicationService } from '../evaluation/oral-communication.service';
 import { WrittenCommunicationService } from '../evaluation/written-communication.service';
+import { GamificationService } from '../gamification/gamification.service';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class ResultsService {
     private readonly leadershipService: LeadershipService,
     private readonly oralService: OralCommunicationService,
     private readonly writtenService: WrittenCommunicationService,
+    private readonly gamificationService: GamificationService,
     private readonly usersService: UsersService,
   ) {}
 
@@ -32,6 +34,7 @@ export class ResultsService {
       scenario.feedback,
       selectedOption,
       scenario.theory,
+      scenario.maturityLevel,
     );
 
     const attempt = await this.getNextAttempt(userId, scenarioId);
@@ -51,10 +54,12 @@ export class ResultsService {
     // Update progress
     await this.updateProgress(userId, scenario.moduleId, evaluation.score);
 
-    // Award XP
-    await this.usersService.addXp(userId, result.xpEarned);
+    // Retroalimentación Inmediata: gamification processing
+    const gamification = await this.gamificationService.processActivityCompletion(
+      userId, 'scenario', evaluation.score, scenarioId,
+    );
 
-    return { result, evaluation };
+    return { result, evaluation, gamification };
   }
 
   // ─── Submit an oral exercise transcript ───
@@ -78,9 +83,13 @@ export class ResultsService {
     await this.resultRepo.save(result);
 
     await this.updateProgress(userId, exercise.moduleId, evaluation.score);
-    await this.usersService.addXp(userId, result.xpEarned);
 
-    return { result, evaluation };
+    // Retroalimentación Inmediata: gamification processing
+    const gamification = await this.gamificationService.processActivityCompletion(
+      userId, 'oral', evaluation.score, exerciseId,
+    );
+
+    return { result, evaluation, gamification };
   }
 
   // ─── Submit a written exercise ───
@@ -108,9 +117,13 @@ export class ResultsService {
     await this.resultRepo.save(result);
 
     await this.updateProgress(userId, exercise.moduleId, evaluation.score);
-    await this.usersService.addXp(userId, result.xpEarned);
 
-    return { result, evaluation };
+    // Retroalimentación Inmediata: gamification processing
+    const gamification = await this.gamificationService.processActivityCompletion(
+      userId, 'written', evaluation.score, exerciseId,
+    );
+
+    return { result, evaluation, gamification };
   }
 
   // ─── Get all results for a user ───

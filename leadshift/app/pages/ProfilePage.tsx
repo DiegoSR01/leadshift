@@ -35,9 +35,18 @@ export function ProfilePage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.users.update({ name });
+      await api.users.update({ name, settings: { notifications: notif, emailDigest, publicProfile } });
       await refreshUser();
       setEditing(false);
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await api.users.update({ settings: { notifications: notif, emailDigest, publicProfile } });
+      await refreshUser();
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
@@ -47,14 +56,16 @@ export function ProfilePage() {
   }
 
   const xp = user?.xp ?? profile.xp ?? 0;
-  const nextLevelXp = profile.nextLevelXp ?? 1900;
+  const levelInfo = profile.levelInfo || {};
+  const nextLevelXp = levelInfo.nextLevelXp ?? 1900;
   const xpPercent = nextLevelXp > 0 ? (xp / nextLevelXp) * 100 : 0;
-  const level = user?.level ?? profile.level ?? 1;
-  const levelName = user?.levelName ?? profile.levelName ?? 'Principiante';
+  const level = levelInfo.level ?? user?.level ?? profile.level ?? 1;
+  const levelName = levelInfo.name ?? user?.levelName ?? 'Principiante';
   const avatar = name ? name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'U';
   const modules = profile.modules || [];
   const badges = profile.badges || [];
   const streak = profile.streak ?? 0;
+  const joinDate = profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -176,7 +187,7 @@ export function ProfilePage() {
                     { icon: GraduationCap, label: 'Universidad', value: profile.university || 'ITToluca' },
                     { icon: BookOpen, label: 'Carrera', value: profile.career || '' },
                     { icon: Target, label: 'Semestre', value: `Semestre ${profile.semester || ''}` },
-                    { icon: Star, label: 'Miembro desde', value: profile.joinDate || '' },
+                    { icon: Star, label: 'Miembro desde', value: joinDate },
                   ].map((field, i) => {
                     const Icon = field.icon;
                     return (
@@ -315,6 +326,17 @@ export function ProfilePage() {
               </div>
               <button className="w-full border border-blue-200 text-blue-600 text-sm font-medium py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
                 Ver política de privacidad
+              </button>
+            </div>
+
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                onClick={handleSaveSettings}
+                disabled={saving}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 text-sm"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Guardando...' : 'Guardar configuración'}
               </button>
             </div>
           </div>

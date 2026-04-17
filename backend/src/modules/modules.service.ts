@@ -46,15 +46,19 @@ export class ModulesService {
   }
 
   async findOne(id: string) {
-    const mod = await this.moduleRepo.findOne({ where: { id } });
+    // Support lookup by UUID or by module type (e.g. 'leadership', 'oral', 'written')
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const mod = await this.moduleRepo.findOne({
+      where: isUuid ? { id } : { type: id as any },
+    });
     if (!mod) throw new NotFoundException('Módulo no encontrado');
 
     const scenarios = await this.scenarioRepo.find({
-      where: { moduleId: id },
+      where: { moduleId: mod.id },
       order: { orderIndex: 'ASC' },
     });
     const exercises = await this.exerciseRepo.find({
-      where: { moduleId: id },
+      where: { moduleId: mod.id },
       order: { orderIndex: 'ASC' },
     });
 

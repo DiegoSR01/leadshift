@@ -37,10 +37,10 @@ export function ResultsPage() {
     return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="text-slate-400">Cargando resultados...</div></div>;
   }
 
-  const overallResult = results?.overall || { score: 0, level: 'Principiante', rank: '', completedAt: '' };
-  const moduleResults = results?.modules || [];
+  const overallResult = results?.overall || { score: 0, level: 'Principiante', totalExercises: 0 };
+  const moduleResults = results?.moduleResults || [];
   const radarData = results?.radarData || [];
-  const barData = results?.barData || [];
+  const barData = moduleResults.map((mod: any) => ({ module: mod.title, promedio: mod.score || 0, mejor: mod.bestScore || 0 }));
   const feedbackItems = results?.feedback || [];
   const recommendations = results?.recommendations || [];
   return (
@@ -57,7 +57,30 @@ export function ResultsPage() {
             <h1 className="text-2xl font-extrabold text-slate-900" style={{ fontSize: '1.6rem' }}>Resultados y Feedback</h1>
             <p className="text-slate-500 text-sm mt-1">Resumen de tu desempeño en el programa LeadShift</p>
           </div>
-          <button className="flex items-center gap-2 border border-slate-200 text-slate-600 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+          <button
+            onClick={() => {
+              const lines = [
+                'REPORTE LEADSHIFT - RESULTADOS',
+                `Fecha: ${new Date().toLocaleDateString('es-MX')}`,
+                `Puntuación general: ${overallResult.score}`,
+                `Nivel: ${overallResult.level}`,
+                '',
+                'RESULTADOS POR MÓDULO:',
+                ...moduleResults.map((mod: any) => `  ${mod.title}: ${mod.score} pts (${mod.exercises || 0} ejercicios)`),
+                '',
+                'FEEDBACK:',
+                ...feedbackItems.map((item: any) => `  [${item.type}] ${item.text}`),
+              ];
+              const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `leadshift-resultados-${new Date().toISOString().split('T')[0]}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="flex items-center gap-2 border border-slate-200 text-slate-600 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors"
+          >
             <Download className="w-4 h-4" />
             Exportar reporte
           </button>
@@ -76,17 +99,13 @@ export function ResultsPage() {
             <div className="text-7xl font-extrabold mb-2">{overallResult.score}</div>
             <div className="flex items-center gap-4">
               <span className="bg-white/20 px-3 py-1 rounded-full text-sm">{overallResult.level}</span>
-              <span className="bg-yellow-400/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">{overallResult.rank}</span>
-            </div>
-            <div className="text-blue-300 text-xs mt-3 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              Actualizado el {overallResult.completedAt}
+              <span className="bg-yellow-400/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">{overallResult.totalExercises} ejercicios</span>
             </div>
           </div>
 
           {[
-            { icon: Star, label: 'Módulos completados', value: '2/3', sub: 'En progreso', color: 'text-amber-500 bg-amber-50' },
-            { icon: Award, label: 'Logros obtenidos', value: '3/6', sub: '+2 en camino', color: 'text-violet-500 bg-violet-50' },
+            { icon: Star, label: 'Módulos completados', value: `${moduleResults.filter((m: any) => m.status === 'Completado').length}/${moduleResults.length}`, sub: 'En progreso', color: 'text-amber-500 bg-amber-50' },
+            { icon: Award, label: 'Ejercicios totales', value: String(overallResult.totalExercises || 0), sub: 'Completados', color: 'text-violet-500 bg-violet-50' },
           ].map((card, i) => {
             const Icon = card.icon;
             return (
@@ -108,9 +127,9 @@ export function ResultsPage() {
               <TrendingUp className="w-5 h-5 text-emerald-500" />
             </div>
             <div>
-              <div className="text-3xl font-extrabold text-slate-900 mb-0.5">+34%</div>
-              <div className="text-sm font-medium text-slate-700">Mejora promedio</div>
-              <div className="text-xs text-slate-500 mt-0.5">vs evaluación inicial</div>
+              <div className="text-3xl font-extrabold text-slate-900 mb-0.5">{overallResult.score || 0}</div>
+              <div className="text-sm font-medium text-slate-700">Puntaje promedio</div>
+              <div className="text-xs text-slate-500 mt-0.5">General del programa</div>
             </div>
           </div>
         </div>
@@ -153,13 +172,13 @@ export function ResultsPage() {
               const colors = colorMap[type] || colorMap.leadership;
               const sl = scoreLabel(mod.score);
               return (
-                <div key={mod.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div key={mod.moduleId || mod.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                   <div className={`p-5 bg-gradient-to-r ${colors.color}`}>
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                         <Icon className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-white font-bold text-sm">{mod.module}</span>
+                      <span className="text-white font-bold text-sm">{mod.title}</span>
                     </div>
                     <div className="text-5xl font-extrabold text-white">{mod.score}</div>
                     <div className="text-white/70 text-xs mt-1">puntos promedio</div>

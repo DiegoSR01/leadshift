@@ -1,69 +1,78 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
 import {
   PenTool, ChevronRight, ChevronLeft, ArrowRight,
   CheckCircle, AlertCircle, XCircle, BarChart3,
   Target, Clock, Star, BookOpen, Lightbulb, RefreshCw,
-  FileText, TrendingUp,
+  FileText, TrendingUp, Hash,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
-const exercises = [
-  {
-    id: 1,
-    title: 'Síntesis de arquitectura de microservicios',
-    type: 'Síntesis técnica',
-    difficulty: 'Intermedio',
-    wordLimit: { min: 150, max: 250 },
-    timeLimit: 20,
-    instructions: `Lee el siguiente fragmento técnico y redacta una síntesis clara y concisa para un equipo de QA que no tiene experiencia en arquitecturas de backend. Tu síntesis debe:
+/** Local text analysis for live preview (mirrors backend NLP logic) */
+function analyzeText(text: string) {
+  // Words: split by whitespace, filter empty and pure-punctuation tokens
+  const words = text.trim().split(/\s+/).filter((w) => w.length > 0 && /\w/.test(w));
+  const wordCount = words.length;
 
-• Explicar qué son los microservicios en términos simples
-• Mencionar 2 ventajas principales para el proyecto
-• Identificar el principal desafío de implementación
-• Recomendar una acción concreta para el equipo de QA`,
-    sourceText: `Los microservicios representan un estilo arquitectónico que estructura una aplicación como un conjunto de servicios pequeños, desplegables de forma independiente, diseñados en torno a las capacidades del negocio. Cada servicio se ejecuta en su propio proceso y se comunica mediante mecanismos ligeros, generalmente una API HTTP. Estos servicios pueden ser desplegados de forma completamente automatizada de manera independiente. La naturaleza descentralizada de los microservicios implica que cada servicio gestiona su propia base de datos, lo que permite la adopción de diferentes tecnologías de persistencia según las necesidades específicas del servicio (polyglot persistence). Sin embargo, este enfoque introduce complejidad operacional significativa: la gestión de múltiples servicios requiere infraestructura sofisticada de monitoreo, trazabilidad distribuida (distributed tracing) y orquestación de contenedores.`,
-    criteria: [
-      { id: 'clarity', label: 'Claridad y comprensión', weight: 30 },
-      { id: 'synthesis', label: 'Síntesis efectiva', weight: 25 },
-      { id: 'audience', label: 'Adaptación al público', weight: 25 },
-      { id: 'structure', label: 'Estructura y coherencia', weight: 20 },
-    ],
-    placeholder: 'Escribe tu síntesis aquí. Recuerda adaptar el lenguaje técnico para el equipo de QA...',
-  },
-  {
-    id: 2,
-    title: 'Informe técnico de incidente de seguridad',
-    type: 'Redacción técnica',
-    difficulty: 'Avanzado',
-    wordLimit: { min: 200, max: 350 },
-    timeLimit: 30,
-    instructions: `Redacta un informe ejecutivo sobre el siguiente incidente de seguridad. El informe debe dirigirse al CTO y debe incluir:
+  // Sentences: split on sentence-ending punctuation, keep non-empty
+  const sentences = text.split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+  const sentenceCount = sentences.length;
 
-• Descripción del incidente (qué ocurrió, cuándo, impacto)
-• Causa raíz identificada
-• Acciones inmediatas tomadas
-• Medidas preventivas propuestas
-• Lecciones aprendidas`,
-    sourceText: `Incidente #2024-SEC-047: El 15 de marzo a las 02:30 hrs, se detectó acceso no autorizado a la base de datos de producción. El atacante explotó una vulnerabilidad SQL injection en el módulo de búsqueda de productos. Se comprometieron 1,240 registros de usuarios (nombre, email, hash de contraseña). El sistema fue aislado a las 03:15 hrs. La vulnerabilidad existía desde la versión 2.1 del sistema, lanzada hace 8 meses. Se detectó mediante alertas de DLP del SIEM. El vector de ataque fue la falta de sanitización de parámetros en el endpoint /api/search.`,
-    criteria: [
-      { id: 'completeness', label: 'Completitud del informe', weight: 25 },
-      { id: 'precision', label: 'Precisión técnica', weight: 30 },
-      { id: 'executive', label: 'Comunicación ejecutiva', weight: 25 },
-      { id: 'proposals', label: 'Propuestas concretas', weight: 20 },
-    ],
-    placeholder: 'Redacta el informe ejecutivo del incidente de seguridad...',
-  },
-];
+  const avgWordsPerSentence = sentenceCount > 0 ? Math.round(wordCount / sentenceCount) : 0;
 
-function analyzText(text: string) {
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
-  const sentences = text.split(/[.!?]+/).filter(Boolean).length;
-  const avgWordsPerSentence = sentences > 0 ? Math.round(words / sentences) : 0;
-  const techWords = ['sistema', 'arquitectura', 'microservicio', 'servicio', 'api', 'base de datos', 'deploy', 'implementación', 'backend', 'vulnerabilidad', 'seguridad', 'incidente', 'protocolo'];
-  const techCount = techWords.filter((w) => text.toLowerCase().includes(w)).length;
-  return { words, sentences, avgWordsPerSentence, techCount };
+  // Paragraphs: split on double newline
+  const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
+
+  // Technical terms: substring match on comprehensive list
+  const techTerms = [
+    'arquitectura', 'microservicio', 'api', 'endpoint', 'base de datos',
+    'servidor', 'escalabilidad', 'contenedor', 'docker', 'kubernetes',
+    'latencia', 'throughput', 'sql', 'rest', 'http', 'framework',
+    'patrón', 'módulo', 'componente', 'protocolo', 'seguridad',
+    'inyección', 'vulnerabilidad', 'autenticación', 'cifrado', 'firewall',
+    'incidente', 'sistema', 'red', 'log', 'monitoreo',
+    'algoritmo', 'software', 'hardware', 'interfaz', 'compilador',
+    'runtime', 'frontend', 'backend', 'devops', 'cloud',
+    'tcp', 'dns', 'vpn', 'gateway', 'routing',
+    'nosql', 'mongodb', 'postgresql', 'índice', 'query',
+    'normalización', 'transacción', 'replicación', 'sharding',
+    'optimización', 'implementación', 'integración', 'iteración',
+    'prototipo', 'testing', 'deploy', 'pipeline', 'sprint',
+    'requisito', 'especificación', 'abstracción', 'encapsulamiento',
+    'herencia', 'polimorfismo', 'recursión', 'concurrencia',
+    'token', 'hash', 'middleware', 'websocket', 'graphql',
+    'refactoring', 'debugging', 'caché', 'code review',
+  ];
+  const lower = text.toLowerCase();
+  const foundTerms = techTerms.filter((t) => lower.includes(t));
+
+  // Connectors found
+  const connectors = [
+    'además', 'también', 'asimismo', 'sin embargo', 'no obstante', 'aunque',
+    'por lo tanto', 'en consecuencia', 'porque', 'ya que', 'debido a',
+    'primero', 'segundo', 'finalmente', 'en conclusión', 'por ejemplo',
+    'es decir', 'en primer lugar', 'a continuación', 'por otra parte',
+    'dado que', 'en resumen', 'en cambio', 'mientras que', 'cabe destacar',
+  ];
+  const connectorsFound = connectors.filter((c) => lower.includes(c));
+
+  // Lexical diversity (unique/total ratio)
+  const uniqueWords = new Set(words.map((w) => w.toLowerCase()));
+  const uniqueRatio = wordCount > 0 ? Math.round((uniqueWords.size / wordCount) * 100) : 0;
+
+  return {
+    wordCount,
+    sentenceCount,
+    avgWordsPerSentence,
+    paragraphCount: paragraphs.length,
+    techTerms: foundTerms,
+    techCount: foundTerms.length,
+    connectorsFound,
+    connectorsCount: connectorsFound.length,
+    uniqueRatio,
+    words, // actual word list for display
+  };
 }
 
 export function WrittenCommunicationPage() {
@@ -83,33 +92,37 @@ export function WrittenCommunicationPage() {
     }).catch(console.error).finally(() => setLoadingExercises(false));
   }, []);
 
-  const stats = useCallback(() => analyzText(text), [text]);
-  const s = stats();
+  const s = useMemo(() => analyzeText(text), [text]);
 
   const handleSubmit = async () => {
     if (!selectedEx || submitting) return;
     setSubmitting(true);
     try {
-      const result = await api.results.submitWritten(selectedEx.id, text);
+      const response = await api.results.submitWritten(selectedEx.id, text);
+      const evaluation = response.evaluation || {};
       setResultFeedback({
-        overallScore: result.score,
-        breakdown: result.feedback?.breakdown || selectedEx.criteria?.map((c: any) => ({ ...c, score: Math.floor(65 + Math.random() * 30) })) || [],
-        issues: result.feedback?.issues || [
-          { type: 'success' as const, text: 'Buena estructura general del texto.' },
-          { type: 'info' as const, text: 'Considera agregar una conclusión más explícita.' },
-        ],
-        suggestions: result.feedback?.suggestions || [
-          'Usa conectores lógicos para mejorar la fluidez',
-          'Empieza párrafos con la idea principal',
-        ],
+        overallScore: evaluation.score ?? response.result?.score ?? 0,
+        breakdown: evaluation.criteriaScores?.map((c: any) => ({
+          id: c.criterionId, label: c.label, weight: c.weight, score: c.score, feedback: c.feedback || '', level: c.level || '',
+        })) || [],
+        issues: evaluation.issues?.map((issue: any) => ({ type: issue.type, text: issue.message || issue.text })) || [],
+        suggestions: evaluation.recommendations || evaluation.editingSuggestions || [],
+        editingSuggestions: evaluation.editingSuggestions || [],
+        nlpDetails: evaluation.nlpDetails || null,
+        synthesisAnalysis: evaluation.synthesisAnalysis || null,
+        cohesionAnalysis: evaluation.cohesionAnalysis || null,
       });
       refreshUser();
     } catch {
       setResultFeedback({
-        overallScore: 75,
-        breakdown: selectedEx.criteria?.map((c: any) => ({ ...c, score: Math.floor(65 + Math.random() * 30) })) || [],
-        issues: [{ type: 'info' as const, text: 'Error al enviar. Resultado simulado.' }],
-        suggestions: ['Intenta de nuevo más tarde'],
+        overallScore: 0,
+        breakdown: [],
+        issues: [{ type: 'warning' as const, text: 'Error al enviar. Por favor intenta de nuevo.' }],
+        suggestions: [],
+        editingSuggestions: [],
+        nlpDetails: null,
+        synthesisAnalysis: null,
+        cohesionAnalysis: null,
       });
     } finally {
       setSubmitting(false);
@@ -118,9 +131,9 @@ export function WrittenCommunicationPage() {
     }
   };
 
-  const wordLimit = selectedEx?.wordLimit;
+  const wordLimit = selectedEx ? { min: selectedEx.wordLimitMin ?? 0, max: selectedEx.wordLimitMax ?? 9999 } : null;
   const wordStatus = wordLimit
-    ? s.words < wordLimit.min ? 'under' : s.words > wordLimit.max ? 'over' : 'ok'
+    ? s.wordCount < wordLimit.min ? 'under' : s.wordCount > wordLimit.max ? 'over' : 'ok'
     : 'ok';
 
   if (phase === 'list') {
@@ -157,17 +170,17 @@ export function WrittenCommunicationPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-cyan-50 text-cyan-700 text-xs font-medium px-2.5 py-1 rounded-full">{ex.type}</span>
+                    <span className="bg-cyan-50 text-cyan-700 text-xs font-medium px-2.5 py-1 rounded-full">{ex.subType || ex.exerciseType || 'Escrito'}</span>
                     <span className="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">{ex.difficulty}</span>
                     <span className="flex items-center gap-1 text-xs text-slate-500">
                       <Clock className="w-3.5 h-3.5" />{ex.timeLimit} min
                     </span>
                     <span className="flex items-center gap-1 text-xs text-slate-500">
-                      <BookOpen className="w-3.5 h-3.5" />{ex.wordLimit.min}–{ex.wordLimit.max} palabras
+                      <BookOpen className="w-3.5 h-3.5" />{ex.wordLimitMin ?? 0}–{ex.wordLimitMax ?? '∞'} palabras
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">{ex.title}</h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">{ex.instructions.split('\n')[0]}</p>
+                  <p className="text-slate-600 text-sm leading-relaxed">{(ex.instructions || ex.description || '').split('\n')[0]}</p>
                 </div>
               </div>
               <div className="flex justify-end pt-4 mt-4 border-t border-slate-100">
@@ -238,25 +251,27 @@ export function WrittenCommunicationPage() {
                     wordStatus === 'ok' ? 'bg-emerald-100 text-emerald-700' :
                     wordStatus === 'under' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
                   }`}>
-                    {s.words} palabras {wordLimit && `(mín. ${wordLimit.min}, máx. ${wordLimit.max})`}
+                    {s.wordCount} palabras {wordLimit && `(mín. ${wordLimit.min}, máx. ${wordLimit.max})`}
                   </span>
                 </div>
               </div>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={selectedEx.placeholder}
+                placeholder={selectedEx.placeholder || 'Escribe tu redacción aquí...'}
                 className="w-full h-64 p-5 text-slate-700 text-sm leading-relaxed resize-none focus:outline-none placeholder-slate-400"
               />
             </div>
 
             {/* Live stats */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
               {[
-                { label: 'Palabras', value: s.words, icon: BookOpen },
-                { label: 'Oraciones', value: s.sentences, icon: FileText },
-                { label: 'Prom. por oración', value: s.avgWordsPerSentence, icon: BarChart3 },
-                { label: 'Términos técnicos', value: s.techCount, icon: Target },
+                { label: 'Palabras', value: s.wordCount, icon: BookOpen },
+                { label: 'Oraciones', value: s.sentenceCount, icon: FileText },
+                { label: 'Párrafos', value: s.paragraphCount, icon: Hash },
+                { label: 'Prom/oración', value: s.avgWordsPerSentence, icon: BarChart3 },
+                { label: 'Técnicos', value: s.techCount, icon: Target },
+                { label: 'Conectores', value: s.connectorsCount, icon: TrendingUp },
               ].map((stat, i) => {
                 const Icon = stat.icon;
                 return (
@@ -269,10 +284,41 @@ export function WrittenCommunicationPage() {
               })}
             </div>
 
+            {/* Detected technical terms */}
+            {s.techTerms.length > 0 && (
+              <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-3">
+                <div className="text-xs font-medium text-cyan-700 mb-2">Términos técnicos detectados ({s.techCount}):</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {s.techTerms.map((term, i) => (
+                    <span key={i} className="bg-white text-cyan-700 text-xs px-2 py-0.5 rounded-full border border-cyan-200">{term}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Detected connectors */}
+            {s.connectorsFound.length > 0 && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+                <div className="text-xs font-medium text-blue-700 mb-2">Conectores discursivos ({s.connectorsCount}):</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {s.connectorsFound.map((c, i) => (
+                    <span key={i} className="bg-white text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-200">{c}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Diversity indicator */}
+            {s.wordCount >= 10 && (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Diversidad léxica: <strong className={s.uniqueRatio >= 60 ? 'text-emerald-600' : s.uniqueRatio >= 40 ? 'text-amber-600' : 'text-red-600'}>{s.uniqueRatio}%</strong> palabras únicas</span>
+              </div>
+            )}
+
             {/* Submit */}
             <button
               onClick={handleSubmit}
-              disabled={s.words < (wordLimit?.min || 0) || submitting}
+              disabled={s.wordCount < (wordLimit?.min || 1) || submitting}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-cyan-800 text-white font-bold py-4 rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-cyan-200"
             >
               <TrendingUp className="w-5 h-5" />
@@ -285,6 +331,12 @@ export function WrittenCommunicationPage() {
   }
 
   if (phase === 'result' && selectedEx && resultFeedback) {
+    const nlp = resultFeedback.nlpDetails;
+    const scoreColor = (score: number) =>
+      score >= 85 ? 'text-emerald-600' : score >= 70 ? 'text-blue-600' : score >= 55 ? 'text-amber-600' : 'text-red-600';
+    const barColor = (score: number) =>
+      score >= 85 ? 'bg-emerald-500' : score >= 70 ? 'bg-blue-500' : score >= 55 ? 'bg-amber-500' : 'bg-red-500';
+
     return (
       <div className="min-h-screen bg-slate-50">
         <div className="bg-white border-b border-slate-200 px-8 py-4">
@@ -302,22 +354,104 @@ export function WrittenCommunicationPage() {
             </div>
           </div>
 
+          {/* NLP Analysis Panel */}
+          {nlp && (
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+              <div className="flex items-center gap-2 text-blue-700 font-bold mb-3 text-sm">
+                <BarChart3 className="w-4 h-4" />
+                Análisis NLP del texto
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.wordCount}</div>
+                  <div className="text-xs text-slate-500">Palabras</div>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.sentenceCount}</div>
+                  <div className="text-xs text-slate-500">Oraciones</div>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.techTermCount}</div>
+                  <div className="text-xs text-slate-500">Términos técnicos</div>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.connectorsCount}</div>
+                  <div className="text-xs text-slate-500">Conectores</div>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.guiraudIndex}</div>
+                  <div className="text-xs text-slate-500">Índice Guiraud</div>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.fernandezHuerta}</div>
+                  <div className="text-xs text-slate-500">Fernández-Huerta</div>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.lexicalDensity}%</div>
+                  <div className="text-xs text-slate-500">Densidad léxica</div>
+                </div>
+                <div className="bg-white rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-slate-900">{nlp.complexityLevel}</div>
+                  <div className="text-xs text-slate-500">Complejidad</div>
+                </div>
+              </div>
+              {nlp.techTermsFound && nlp.techTermsFound.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-xs text-blue-600 font-medium mb-1">Términos técnicos detectados (NLP):</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {nlp.techTermsFound.map((term: string, i: number) => (
+                      <span key={i} className="bg-white text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-200">{term}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {nlp.connectorsUsed && nlp.connectorsUsed.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-xs text-blue-600 font-medium mb-1">Conectores detectados:</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {nlp.connectorsUsed.map((c: string, i: number) => (
+                      <span key={i} className="bg-white text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-200">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {nlp.redundancyIndex != null && (
+                <div className="flex items-center gap-4 mt-3 text-xs">
+                  <span className={`px-2 py-1 rounded-full ${nlp.redundancyIndex < 0.5 ? 'bg-emerald-100 text-emerald-700' : nlp.redundancyIndex < 1 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                    Redundancia: {nlp.redundancyIndex}
+                  </span>
+                  <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                    Densidad conceptual: {nlp.conceptDensity}/100 palabras
+                  </span>
+                  {nlp.lengthPenaltyApplied && (
+                    <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700">
+                      ⚠ Texto corto — penalización aplicada
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 gap-5">
-            {/* Breakdown */}
+            {/* Breakdown with feedback */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
               <h3 className="font-bold text-slate-900 mb-4">Por criterio</h3>
               {resultFeedback.breakdown.map((c: any) => (
-                <div key={c.id} className="mb-4">
+                <div key={c.id} className="mb-5">
                   <div className="flex justify-between mb-1.5">
                     <span className="text-sm font-medium text-slate-700">{c.label}</span>
-                    <span className="text-sm font-bold text-cyan-700">{c.score}%</span>
+                    <span className={`text-sm font-bold ${scoreColor(c.score)}`}>{c.score}%</span>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className="w-full bg-slate-100 rounded-full h-2 mb-1.5">
                     <div
-                      className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-700 transition-all"
+                      className={`h-2 rounded-full ${barColor(c.score)} transition-all`}
                       style={{ width: `${c.score}%` }}
                     />
                   </div>
+                  {c.feedback && (
+                    <p className="text-xs text-slate-500 leading-relaxed">{c.feedback}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -327,12 +461,13 @@ export function WrittenCommunicationPage() {
               <h3 className="font-bold text-slate-900 mb-4">Feedback detallado</h3>
               <div className="space-y-3">
                 {resultFeedback.issues.map((issue: any, i: number) => {
-                  const config = {
+                  const config: Record<string, any> = {
                     warning: { icon: AlertCircle, color: 'text-amber-500', bg: 'bg-amber-50 border-amber-200' },
                     success: { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-50 border-emerald-200' },
                     info: { icon: Lightbulb, color: 'text-blue-500', bg: 'bg-blue-50 border-blue-200' },
+                    error: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50 border-red-200' },
                   };
-                  const c = config[issue.type];
+                  const c = config[issue.type] || config.info;
                   const Icon = c.icon;
                   return (
                     <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${c.bg}`}>
@@ -343,22 +478,38 @@ export function WrittenCommunicationPage() {
                 })}
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-100">
-                <div className="text-sm font-bold text-slate-700 mb-3">Sugerencias de mejora</div>
-                {resultFeedback.suggestions.map((s: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-slate-600 mb-2">
-                    <span className="w-5 h-5 bg-cyan-100 text-cyan-700 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">{i+1}</span>
-                    {s}
-                  </div>
-                ))}
-              </div>
+              {/* Editing suggestions */}
+              {(resultFeedback.editingSuggestions || []).length > 0 && (
+                <div className="mt-5 pt-4 border-t border-slate-100">
+                  <div className="text-sm font-bold text-slate-700 mb-3">Sugerencias de edición</div>
+                  {resultFeedback.editingSuggestions.map((s: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-slate-600 mb-2">
+                      <span className="w-5 h-5 bg-cyan-100 text-cyan-700 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">{i+1}</span>
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {(resultFeedback.suggestions || []).length > 0 && (
+                <div className="mt-5 pt-4 border-t border-slate-100">
+                  <div className="text-sm font-bold text-slate-700 mb-3">Recomendaciones</div>
+                  {resultFeedback.suggestions.map((s: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-slate-600 mb-2">
+                      <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Your text */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-slate-900">Tu redacción ({s.words} palabras)</h3>
+              <h3 className="font-bold text-slate-900">Tu redacción ({s.wordCount} palabras)</h3>
               <button onClick={() => setPhase('write')} className="flex items-center gap-1.5 text-cyan-600 text-sm hover:underline">
                 <RefreshCw className="w-3.5 h-3.5" /> Editar
               </button>

@@ -30,6 +30,34 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+/** Send FormData (multipart) – does NOT set Content-Type (browser sets boundary) */
+async function requestFormData<T>(path: string, formData: FormData): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem('leadshift_token');
+    window.location.href = '/login';
+    throw new Error('No autorizado');
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Error ${res.status}`);
+  }
+
+  return res.json();
+}
+
 // ─── Auth ─────────────────────────────────────
 export const api = {
   auth: {
@@ -108,6 +136,24 @@ export const api = {
     get: () => request<any>('/dashboard'),
     analytics: () => request<any>('/dashboard/analytics'),
     results: () => request<any>('/dashboard/results'),
+  },
+
+  // ─── Transcription (Whisper) ───────────────
+  transcribe: {
+    /** Check if Whisper is available on the server */
+    status: () => request<{ available: boolean }>('/transcribe/status'),
+
+    /** Upload audio blob for transcription */
+    audio: (blob: Blob, filename = 'audio.webm') => {
+      const fd = new FormData();
+      fd.append('audio', blob, filename);
+      return requestFormData<{
+        text: string;
+        language: string;
+        duration: number;
+        segments: { start: number; end: number; text: string }[];
+      }>('/transcribe', fd);
+    },
   },
 };
 

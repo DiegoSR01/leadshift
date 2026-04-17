@@ -29,16 +29,14 @@ async function seed() {
   await AppDataSource.initialize();
   console.log('🌱 Seeding database...');
 
-  // ─── Clear existing data ───
-  await AppDataSource.getRepository(UserAchievement).delete({});
-  await AppDataSource.getRepository(Result).delete({});
-  await AppDataSource.getRepository(UserProgress).delete({});
-  await AppDataSource.getRepository(Assessment).delete({});
-  await AppDataSource.getRepository(Scenario).delete({});
-  await AppDataSource.getRepository(Exercise).delete({});
-  await AppDataSource.getRepository(Achievement).delete({});
-  await AppDataSource.getRepository(Module).delete({});
-  await AppDataSource.getRepository(User).delete({});
+  // ─── Clear existing data (ignore if tables don't exist yet) ───
+  const tables = [
+    'user_achievements', 'result', 'user_progress', 'assessment',
+    'scenario', 'exercise', 'achievements', 'module', 'user',
+  ];
+  for (const t of tables) {
+    await AppDataSource.query(`DELETE FROM "${t}"`).catch(() => {});
+  }
 
   // ═══════════════════════════════════════════
   // 1. MODULES
