@@ -3,6 +3,7 @@ import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { AppLayout } from './components/AppLayout';
+import { RootLayout } from './components/RootLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { ModulesPage } from './pages/ModulesPage';
 import { LeadershipModulePage } from './pages/LeadershipModulePage';
@@ -13,21 +14,26 @@ import { ProfilePage } from './pages/ProfilePage';
 import { ResultsPage } from './pages/ResultsPage';
 
 export const router = createBrowserRouter([
-  { path: '/', Component: LandingPage },
-  { path: '/login', Component: LoginPage },
-  { path: '/register', Component: RegisterPage },
   {
-    path: '/app',
-    Component: AppLayout,
+    Component: RootLayout,
     children: [
-      { index: true, Component: DashboardPage },
-      { path: 'modules', Component: ModulesPage },
-      { path: 'modules/leadership', Component: LeadershipModulePage },
-      { path: 'modules/oral', Component: OralCommunicationPage },
-      { path: 'modules/written', Component: WrittenCommunicationPage },
-      { path: 'progress', Component: ProgressPage },
-      { path: 'profile', Component: ProfilePage },
-      { path: 'results', Component: ResultsPage },
+      { index: true, Component: LandingPage },
+      { path: 'login', Component: LoginPage },
+      { path: 'register', Component: RegisterPage },
+      {
+        path: 'app',
+        Component: AppLayout,
+        children: [
+          { index: true, Component: DashboardPage },
+          { path: 'modules', Component: ModulesPage },
+          { path: 'modules/leadership', Component: LeadershipModulePage },
+          { path: 'modules/oral', Component: OralCommunicationPage },
+          { path: 'modules/written', Component: WrittenCommunicationPage },
+          { path: 'progress', Component: ProgressPage },
+          { path: 'profile', Component: ProfilePage },
+          { path: 'results', Component: ResultsPage },
+        ],
+      },
     ],
   },
 ]);

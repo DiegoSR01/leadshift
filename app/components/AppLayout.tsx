@@ -1,6 +1,6 @@
-import { Outlet } from 'react-router';
 import { Sidebar } from './Sidebar';
 import { useState } from 'react';
+import { AnimatedOutlet } from './AnimatedOutlet';
 
 export function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -11,11 +11,8 @@ export function AppLayout() {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      <main
-        className="flex-1 overflow-y-auto transition-all duration-300"
-        style={{ marginLeft: sidebarCollapsed ? '0' : '0' }}
-      >
-        <Outlet />
+      <main className="flex-1 overflow-y-auto transition-all duration-300">
+        <AnimatedOutlet className="min-h-full" yOffset={12} />
       </main>
     </div>
   );

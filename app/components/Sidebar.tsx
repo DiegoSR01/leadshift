@@ -95,7 +95,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Toggle button */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-16 w-6 h-6 bg-slate-700 border border-slate-600 rounded-full flex items-center justify-center text-slate-300 hover:bg-slate-600 transition-colors z-10"
+        className="absolute -right-3 top-16 w-6 h-6 bg-slate-700 border border-slate-600 rounded-full flex items-center justify-center text-slate-300 hover:bg-slate-600 hover:scale-110 active:scale-95 transition-all duration-200 z-10"
       >
         {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
       </button>
@@ -126,7 +126,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <Link
               key={item.href}
               to={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]
                 ${item.sub ? 'ml-2' : ''}
                 ${active
                   ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-900/30'
@@ -153,7 +153,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="px-2 pb-4 border-t border-slate-800 pt-3">
         <Link
           to="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!collapsed && <span className="text-sm">Salir</span>}
