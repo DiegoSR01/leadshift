@@ -103,52 +103,6 @@ Cuando despliegue, guarda la URL final, por ejemplo:
 
 - `https://tu-api.onrender.com`
 
-## 6. Cambios minimos de codigo antes de Vercel
-
-Actualmente hay dos bloqueos para produccion:
-
-1. API hardcodeada a localhost en `leadshift/app/lib/api.ts`
-2. CORS solo localhost en `backend/src/main.ts`
-
-### 6.1 Hacer dinamica la URL de API del frontend
-
-Archivo: `leadshift/app/lib/api.ts`
-
-Reemplaza esto:
-
-```ts
-const API_URL = 'http://localhost:3000/api';
-```
-
-Por esto:
-
-```ts
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-```
-
-### 6.2 Hacer CORS configurable por variable
-
-Archivo: `backend/src/main.ts`
-
-Reemplaza la configuracion fija por esta:
-
-```ts
-const origins = (process.env.FRONTEND_ORIGINS || 'http://localhost:5173,http://localhost:3000')
-	.split(',')
-	.map((origin) => origin.trim())
-	.filter(Boolean);
-
-app.enableCors({
-	origin: origins,
-	credentials: true,
-});
-```
-
-Luego en backend agrega variable:
-
-```env
-FRONTEND_ORIGINS=https://tu-frontend.vercel.app,http://localhost:5173
-```
 
 ## 7. Desplegar frontend en Vercel
 
