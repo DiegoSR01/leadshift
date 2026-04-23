@@ -13,8 +13,27 @@ async function bootstrap() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  const allowLocalDevOrigins = process.env.NODE_ENV !== 'production';
+
   app.enableCors({
-    origin: origins,
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const isConfiguredOrigin = origins.includes(origin);
+      const isLocalDevOrigin =
+        allowLocalDevOrigins &&
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
+      if (isConfiguredOrigin || isLocalDevOrigin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked for origin: ${origin}`), false);
+    },
     credentials: true,
   });
 
