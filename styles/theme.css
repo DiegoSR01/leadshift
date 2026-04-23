@@ -39,6 +39,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --motion-fast: 180ms;
+  --motion-normal: 280ms;
+  --motion-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
@@ -76,6 +79,26 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @theme inline {
@@ -126,6 +149,42 @@
 
   body {
     @apply bg-background text-foreground;
+    animation: app-fade-in 420ms var(--motion-smooth);
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  [role='button'] {
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform, filter;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-smooth);
+  }
+
+  button:not([class*='-translate-y-']):not([class*='hover:scale']):not([class*='hover:-translate']):not([class*='active:scale']):not([class*='active:translate']):hover:not(:disabled),
+  [role='button']:not([class*='-translate-y-']):not([class*='hover:scale']):not([class*='hover:-translate']):not([class*='active:scale']):not([class*='active:translate']):hover:not([aria-disabled='true']) {
+    transform: translateY(-1px);
+  }
+
+  button:not([class*='-translate-y-']):not([class*='hover:scale']):not([class*='hover:-translate']):not([class*='active:scale']):not([class*='active:translate']):active:not(:disabled),
+  [role='button']:not([class*='-translate-y-']):not([class*='hover:scale']):not([class*='hover:-translate']):not([class*='active:scale']):not([class*='active:translate']):active:not([aria-disabled='true']) {
+    transform: translateY(0) scale(0.98);
+  }
+
+  a:hover {
+    filter: saturate(1.08);
+  }
+
+  .route-transition-surface {
+    will-change: opacity, transform, filter;
   }
 
   /**
