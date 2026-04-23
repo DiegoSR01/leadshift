@@ -4,6 +4,35 @@ function getToken(): string | null {
   return localStorage.getItem('leadshift_token');
 }
 
+/** Fetch a file from the API and trigger a browser download */
+async function downloadBlob(path: string, filename: string): Promise<void> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}${path}`, { headers });
+
+  if (res.status === 401) {
+    localStorage.removeItem('leadshift_token');
+    window.location.href = '/login';
+    throw new Error('No autorizado');
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Error ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -136,6 +165,40 @@ export const api = {
     get: () => request<any>('/dashboard'),
     analytics: () => request<any>('/dashboard/analytics'),
     results: () => request<any>('/dashboard/results'),
+  },
+
+  // ─── Admin ─────────────────────────────────
+  admin: {
+    /** Overall platform statistics */
+    stats: () => request<any>('/admin/stats'),
+
+    users: {
+      /** All registered students with their progress */
+      list: () => request<any[]>('/admin/users'),
+    },
+
+    reports: {
+      /**
+       * Downloads the full-group CSV (raw data) compatible with Excel /
+       * statistical tools (SPSS, R, etc.).
+       */
+      downloadCsv: () =>
+        downloadBlob(
+          '/admin/reports/csv',
+          `leadshift-reporte-grupal-${new Date().toISOString().slice(0, 10)}.csv`,
+        ),
+
+      /**
+       * Downloads the individual visual PDF report for a single student.
+       * @param userId  UUID of the student
+       * @param userName Full name used to build the filename
+       */
+      downloadPdf: (userId: string, userName: string) =>
+        downloadBlob(
+          `/admin/reports/pdf/${encodeURIComponent(userId)}`,
+          `leadshift-reporte-${userName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.pdf`,
+        ),
+    },
   },
 
   // ─── Transcription (Whisper) ───────────────

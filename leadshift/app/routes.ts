@@ -11,6 +11,7 @@ import { WrittenCommunicationPage } from './pages/WrittenCommunicationPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResultsPage } from './pages/ResultsPage';
+import { AdminReportsPage } from './pages/AdminReportsPage';
 
 export const router = createBrowserRouter([
   { path: '/', Component: LandingPage },
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'progress', Component: ProgressPage },
       { path: 'profile', Component: ProfilePage },
       { path: 'results', Component: ResultsPage },
+      { path: 'admin', Component: AdminReportsPage },
     ],
   },
 ]);

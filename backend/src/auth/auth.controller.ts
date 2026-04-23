@@ -23,4 +23,16 @@ export class AuthController {
   me(@CurrentUser() user: { id: string }) {
     return this.authService.getProfile(user.id);
   }
+
+  /**
+   * One-time admin setup endpoint.
+   * Only succeeds if there are NO admins in the database yet.
+   * After one admin exists, this endpoint returns 403 forever.
+   */
+  @Post('setup-admin')
+  setupAdmin(
+    @Body() dto: { name: string; email: string; password: string },
+  ) {
+    return this.authService.setupAdmin(dto);
+  }
 }

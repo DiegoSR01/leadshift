@@ -327,10 +327,11 @@ async function seed() {
   ]);
 
   // ═══════════════════════════════════════════
-  // 6. DEMO USER (optional)
+  // 6. DEMO USER + ADMIN USER
   // ═══════════════════════════════════════════
   const userRepo = AppDataSource.getRepository(User);
   const demoPassword = await bcrypt.hash('demo1234', 12);
+  const adminPassword = await bcrypt.hash('admin1234', 12);
 
   await userRepo.save({
     id: uuid(),
@@ -352,8 +353,30 @@ async function seed() {
     },
   });
 
+  await userRepo.save({
+    id: uuid(),
+    name: 'Administrador LeadShift',
+    email: 'admin@leadshift.edu',
+    password: adminPassword,
+    university: 'ITToluca',
+    career: 'Admin',
+    semester: 1,
+    avatar: 'AL',
+    role: 'admin',
+    level: 1,
+    xp: 0,
+    streak: 0,
+    settings: {
+      notifications: true,
+      emailDigest: false,
+      publicProfile: false,
+      darkMode: false,
+    },
+  });
+
   console.log('✅ Seed complete!');
-  console.log('   Demo user: demo@leadshift.edu / demo1234');
+  console.log('   Demo user:  demo@leadshift.edu  / demo1234');
+  console.log('   Admin user: admin@leadshift.edu / admin1234');
   await AppDataSource.destroy();
 }
 

@@ -13,6 +13,7 @@ import {
   Trophy,
   LogOut,
   Star,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -154,6 +155,29 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </Link>
           );
         })}
+
+        {/* Admin link — visible only for admin role */}
+        {user?.role === 'admin' && (
+          <Link
+            to="/app/admin"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+              ${
+                isActive('/app/admin')
+                  ? 'bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-900/30'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <Shield className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && (
+              <span className="text-sm font-medium truncate">Panel Admin</span>
+            )}
+            {collapsed && (
+              <div className="absolute left-16 bg-slate-800 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 border border-slate-700">
+                Panel Admin
+              </div>
+            )}
+          </Link>
+        )}
       </nav>
 
       {/* Bottom */}

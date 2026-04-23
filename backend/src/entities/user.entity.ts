@@ -36,6 +36,9 @@ export class User {
   @Column({ length: 10, nullable: true })
   avatar: string;
 
+  @Column({ type: 'varchar', length: 10, default: 'student' })
+  role: 'student' | 'admin';
+
   @Column({ type: 'int', default: 1 })
   level: number;
 

@@ -10,6 +10,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { EvaluationModule } from './evaluation/evaluation.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { TranscriptionModule } from './transcription/transcription.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { TranscriptionModule } from './transcription/transcription.module';
     EvaluationModule,
     GamificationModule,
     TranscriptionModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
