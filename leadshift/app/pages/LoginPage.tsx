@@ -28,19 +28,6 @@ export function LoginPage() {
     }
   };
 
-  const handleDemo = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      await login('demo@leadshift.edu', 'demo1234');
-      navigate('/app');
-    } catch (err: any) {
-      setError(err.message || 'Error al acceder al demo');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-6">
       {/* Background decorations */}
@@ -124,25 +111,6 @@ export function LoginPage() {
               {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-slate-400 text-xs">o continúa con</span>
-            </div>
-          </div>
-
-          {/* Demo access */}
-          <button
-            onClick={handleDemo}
-            disabled={loading}
-            className="w-full border border-slate-200 text-slate-700 font-medium py-3 rounded-xl hover:bg-slate-50 transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <Zap className="w-4 h-4 text-blue-500" />
-            Acceso de demostración
-          </button>
 
           <p className="text-center text-sm text-slate-500 mt-6">
             ¿No tienes cuenta?{' '}
