@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: leadshift-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: postgres
+      - key: DB_SSL
+        value: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 7d
+      - key: FRONTEND_ORIGINS
+        sync: false
