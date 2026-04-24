@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, Navigate } from 'react-router';
 import { useState } from 'react';
 import { Zap, Mail, Lock, User, BookOpen, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +22,9 @@ export function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { user, loading: authLoading, register } = useAuth();
+
+  if (!authLoading && user) return <Navigate to="/app" replace />;
 
   // Form data
   const [name, setName] = useState('');
