@@ -1,16 +1,31 @@
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, Navigate } from 'react-router';
 import { useState } from 'react';
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, loading: authLoading, login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  if (!authLoading && user) return <Navigate to="/app" replace />;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/app');
+    setError('');
+    setLoading(true);
+    try {
+      await login(email, password);
+      navigate('/app');
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,6 +53,11 @@ export function LoginPage() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-200">
+                {error}
+              </div>
+            )}
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -84,30 +104,13 @@ export function LoginPage() {
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-200 text-sm"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-200 text-sm disabled:opacity-50"
             >
-              Iniciar sesión
-              <ArrowRight className="w-4 h-4" />
+              {loading ? 'Iniciando...' : 'Iniciar sesión'}
+              {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-slate-400 text-xs">o continúa con</span>
-            </div>
-          </div>
-
-          {/* Demo access */}
-          <button
-            onClick={() => navigate('/app')}
-            className="w-full border border-slate-200 text-slate-700 font-medium py-3 rounded-xl hover:bg-slate-50 transition-colors text-sm flex items-center justify-center gap-2"
-          >
-            <Zap className="w-4 h-4 text-blue-500" />
-            Acceso de demostración
-          </button>
 
           <p className="text-center text-sm text-slate-500 mt-6">
             ¿No tienes cuenta?{' '}
