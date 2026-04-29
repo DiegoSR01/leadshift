@@ -131,7 +131,7 @@ export function LandingPage() {
             <div>
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium px-4 py-2 rounded-full mb-6">
                 <Sparkles className="w-4 h-4" />
-                Plataforma EdTech para Ingenieros
+                Plataforma EdTech para Ingenieros · v2.1
               </div>
               <h1 className="text-5xl font-extrabold text-slate-900 leading-tight mb-6" style={{ fontSize: '3.2rem', lineHeight: 1.15 }}>
                 Desarrolla las{' '}

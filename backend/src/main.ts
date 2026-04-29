@@ -26,8 +26,10 @@ async function bootstrap() {
       const isLocalDevOrigin =
         allowLocalDevOrigins &&
         /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+      // Accept all Vercel deployments of this project (production + preview branches)
+      const isVercelPreview = /^https:\/\/leadshift[a-z0-9-]*\.vercel\.app$/.test(origin);
 
-      if (isConfiguredOrigin || isLocalDevOrigin) {
+      if (isConfiguredOrigin || isLocalDevOrigin || isVercelPreview) {
         callback(null, true);
         return;
       }

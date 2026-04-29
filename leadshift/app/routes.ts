@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { RequireAuth } from './components/RequireAuth';
 import { AppLayout } from './components/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { ModulesPage } from './pages/ModulesPage';
@@ -19,8 +20,10 @@ export const router = createBrowserRouter([
   { path: '/register', Component: RegisterPage },
   {
     path: '/app',
-    Component: AppLayout,
-    children: [
+    Component: RequireAuth,
+    children: [{
+      Component: AppLayout,
+      children: [
       { index: true, Component: DashboardPage },
       { path: 'modules', Component: ModulesPage },
       { path: 'modules/leadership', Component: LeadershipModulePage },
@@ -30,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'profile', Component: ProfilePage },
       { path: 'results', Component: ResultsPage },
       { path: 'admin', Component: AdminReportsPage },
-    ],
+      ],
+    }],
   },
 ]);
