@@ -10,6 +10,7 @@ import {
   TrendingUp, Zap, BookOpen, ChevronRight, Bell,
   Calendar,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const radarData = [
   { skill: 'Liderazgo', score: 72 },
@@ -79,14 +80,27 @@ const upcomingTasks = [
   { module: 'Escritura', task: 'Informe técnico final', due: 'En 5 días', urgent: false },
 ];
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 export function DashboardPage() {
+  const { user } = useAuth();
+  const displayName = user?.name || 'Usuario';
+  const initials = getInitials(displayName);
+  const subtitle = [user?.career, user?.university].filter(Boolean).join(' · ');
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top bar */}
       <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900" style={{ fontSize: '1.25rem' }}>Dashboard</h1>
-          <p className="text-slate-500 text-sm">Jueves, 19 de marzo 2026</p>
+          <p className="text-slate-500 text-sm">{new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className="flex items-center gap-4">
           <button className="relative w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors">
@@ -95,11 +109,11 @@ export function DashboardPage() {
           </button>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-              VC
+              {initials}
             </div>
             <div className="hidden sm:block">
-              <div className="text-sm font-medium text-slate-900">Valentina Cruz</div>
-              <div className="text-xs text-slate-500">Ing. Sistemas · UNAM</div>
+              <div className="text-sm font-medium text-slate-900">{displayName}</div>
+              {subtitle && <div className="text-xs text-slate-500">{subtitle}</div>}
             </div>
           </div>
         </div>
@@ -114,12 +128,12 @@ export function DashboardPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Flame className="w-5 h-5 text-orange-300" />
-              <span className="text-white/80 text-sm">Racha de 7 días activa 🔥</span>
+              <span className="text-white/80 text-sm">Racha activa 🔥</span>
             </div>
             <h2 className="text-white text-2xl font-extrabold mb-1" style={{ fontSize: '1.5rem' }}>
-              ¡Hola, Valentina! 👋
+              ¡Hola, {displayName.split(' ')[0]}! 👋
             </h2>
-            <p className="text-blue-100 text-sm">Tienes 3 ejercicios pendientes. ¡Sigues avanzando muy bien!</p>
+            <p className="text-blue-100 text-sm">Sigue avanzando en tus módulos.</p>
           </div>
           <Link
             to="/app/modules"

@@ -5,43 +5,42 @@ import {
   Star, Trophy, Flame, Target, Edit3, Save, X,
   Shield, Bell, Globe, Lock, CheckCircle,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const profileData = {
-  name: 'Valentina Cruz',
-  email: 'v.cruz@ingenieria.unam.mx',
-  university: 'UNAM',
-  career: 'Ingeniería en Sistemas Computacionales',
-  semester: '7',
+const staticData = {
   level: 4,
   levelName: 'Líder en Formación',
   xp: 1240,
   nextLevelXp: 1900,
   streak: 7,
-  joinDate: 'Febrero 2026',
-  avatar: 'VC',
   modules: [
     { name: 'Liderazgo Situacional', progress: 65, color: 'bg-blue-500' },
     { name: 'Comunicación Oral', progress: 40, color: 'bg-violet-500' },
     { name: 'Comunicación Escrita', progress: 80, color: 'bg-cyan-500' },
   ],
   badges: ['🎯', '🔥', '⭐', '📚'],
-  settings: {
-    notifications: true,
-    emailDigest: false,
-    publicProfile: true,
-    darkMode: false,
-  },
 };
 
-export function ProfilePage() {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(profileData.name);
-  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
-  const [notif, setNotif] = useState(profileData.settings.notifications);
-  const [emailDigest, setEmailDigest] = useState(profileData.settings.emailDigest);
-  const [publicProfile, setPublicProfile] = useState(profileData.settings.publicProfile);
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
+}
 
-  const xpPercent = (profileData.xp / profileData.nextLevelXp) * 100;
+export function ProfilePage() {
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(user?.name || '');
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
+  const [notif, setNotif] = useState(true);
+  const [emailDigest, setEmailDigest] = useState(false);
+  const [publicProfile, setPublicProfile] = useState(true);
+
+  const displayName = name || user?.name || 'Usuario';
+  const avatar = getInitials(displayName);
+  const xpPercent = (staticData.xp / staticData.nextLevelXp) * 100;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -64,7 +63,7 @@ export function ProfilePage() {
             {/* Avatar */}
             <div className="relative">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center text-white text-2xl font-extrabold shadow-xl">
-                {profileData.avatar}
+                {avatar}
               </div>
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
                 <CheckCircle className="w-3.5 h-3.5 text-white" />
@@ -82,7 +81,7 @@ export function ProfilePage() {
                   <button onClick={() => setEditing(false)} className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                     <Save className="w-4 h-4 text-white" />
                   </button>
-                  <button onClick={() => { setEditing(false); setName(profileData.name); }} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+                  <button onClick={() => { setEditing(false); setName(user?.name || ''); }} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
                     <X className="w-4 h-4 text-white" />
                   </button>
                 </div>
@@ -94,19 +93,19 @@ export function ProfilePage() {
                   </button>
                 </div>
               )}
-              <p className="text-blue-300 text-sm mb-3">{profileData.career} · {profileData.university}</p>
+              <p className="text-blue-300 text-sm mb-3">{user?.career || ''}{user?.university ? ` · ${user.university}` : ''}</p>
 
               {/* Level badge */}
               <div className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl mb-4">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                <span className="text-white text-sm font-medium">Nivel {profileData.level} · {profileData.levelName}</span>
+                <span className="text-white text-sm font-medium">Nivel {staticData.level} · {staticData.levelName}</span>
               </div>
 
               {/* XP bar */}
               <div className="mb-2">
                 <div className="flex justify-between text-xs text-blue-300 mb-1.5">
-                  <span>{profileData.xp} XP</span>
-                  <span>{profileData.nextLevelXp} XP para Nivel {profileData.level + 1}</span>
+                  <span>{staticData.xp} XP</span>
+                  <span>{staticData.nextLevelXp} XP para Nivel {staticData.level + 1}</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2.5">
                   <div
@@ -120,7 +119,7 @@ export function ProfilePage() {
             {/* Quick stats */}
             <div className="hidden md:flex gap-4">
               {[
-                { icon: Flame, value: `${profileData.streak}`, label: 'días racha', color: 'text-orange-400' },
+                { icon: Flame, value: `${staticData.streak}`, label: 'días racha', color: 'text-orange-400' },
                 { icon: Trophy, value: '3', label: 'logros', color: 'text-yellow-400' },
                 { icon: Target, value: '19', label: 'ejercicios', color: 'text-blue-400' },
               ].map((s, i) => {
@@ -158,12 +157,12 @@ export function ProfilePage() {
                 <h3 className="font-bold text-slate-900 mb-5">Información académica</h3>
                 <div className="grid sm:grid-cols-2 gap-5">
                   {[
-                    { icon: User, label: 'Nombre completo', value: name },
-                    { icon: Mail, label: 'Correo electrónico', value: profileData.email },
-                    { icon: GraduationCap, label: 'Universidad', value: profileData.university },
-                    { icon: BookOpen, label: 'Carrera', value: profileData.career },
-                    { icon: Target, label: 'Semestre', value: `Semestre ${profileData.semester}` },
-                    { icon: Star, label: 'Miembro desde', value: profileData.joinDate },
+                    { icon: User, label: 'Nombre completo', value: displayName },
+                    { icon: Mail, label: 'Correo electrónico', value: user?.email || '' },
+                    { icon: GraduationCap, label: 'Universidad', value: user?.university || '' },
+                    { icon: BookOpen, label: 'Carrera', value: user?.career || '' },
+                    { icon: Target, label: 'Semestre', value: user?.semester ? `Semestre ${user.semester}` : '' },
+                    { icon: Star, label: 'Nivel', value: `${staticData.level} · ${staticData.levelName}` },
                   ].map((field, i) => {
                     const Icon = field.icon;
                     return (
@@ -183,7 +182,7 @@ export function ProfilePage() {
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                 <h3 className="font-bold text-slate-900 mb-5">Progreso en módulos</h3>
                 <div className="space-y-4">
-                  {profileData.modules.map((mod) => (
+                  {staticData.modules.map((mod) => (
                     <div key={mod.name}>
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-medium text-slate-700">{mod.name}</span>
@@ -203,12 +202,12 @@ export function ProfilePage() {
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                 <h3 className="font-bold text-slate-900 mb-4">Badges obtenidos</h3>
                 <div className="grid grid-cols-3 gap-3">
-                  {profileData.badges.map((badge, i) => (
+                  {staticData.badges.map((badge, i) => (
                     <div key={i} className="w-full aspect-square bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-100 rounded-2xl flex items-center justify-center text-3xl">
                       {badge}
                     </div>
                   ))}
-                  {[...Array(3 - (profileData.badges.length % 3 || 3))].map((_, i) => (
+                  {[...Array(3 - (staticData.badges.length % 3 || 3))].map((_, i) => (
                     <div key={`empty-${i}`} className="w-full aspect-square bg-slate-50 border border-slate-100 border-dashed rounded-2xl flex items-center justify-center text-slate-300 text-2xl">
                       +
                     </div>
@@ -219,11 +218,11 @@ export function ProfilePage() {
               <div className="bg-gradient-to-br from-blue-50 to-violet-50 border border-blue-100 rounded-2xl p-5">
                 <h3 className="font-bold text-slate-900 mb-3">Nivel actual</h3>
                 <div className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent mb-1">
-                  {profileData.level}
+                  {staticData.level}
                 </div>
-                <div className="text-slate-700 font-semibold mb-3">{profileData.levelName}</div>
+                <div className="text-slate-700 font-semibold mb-3">{staticData.levelName}</div>
                 <div className="text-slate-500 text-xs">
-                  Te faltan <strong className="text-blue-600">{profileData.nextLevelXp - profileData.xp} XP</strong> para el siguiente nivel
+                  Te faltan <strong className="text-blue-600">{staticData.nextLevelXp - staticData.xp} XP</strong> para el siguiente nivel
                 </div>
               </div>
             </div>

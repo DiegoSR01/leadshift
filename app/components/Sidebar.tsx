@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   BookOpen,
@@ -68,6 +69,13 @@ const navItems = [
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   const isActive = (href: string) => {
     if (href === '/app') return location.pathname === '/app';
@@ -151,13 +159,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* Bottom */}
       <div className="px-2 pb-4 border-t border-slate-800 pt-3">
-        <Link
-          to="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all"
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span className="text-sm">Salir</span>}
-        </Link>
+          {!collapsed && <span className="text-sm">Cerrar sesión</span>}
+        </button>
       </div>
     </aside>
   );
