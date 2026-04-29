@@ -87,7 +87,9 @@ export function ProgressPage() {
           </div>
           <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-violet-50 border border-blue-100 rounded-xl px-4 py-2.5">
             <Calendar className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-slate-700">Semana 8 de 12</span>
+            <span className="text-sm font-medium text-slate-700">
+              Semana {Math.min(12, Math.max(1, Math.ceil((Date.now() - new Date(user?.createdAt || Date.now()).getTime()) / (7 * 24 * 60 * 60 * 1000))))} de 12
+            </span>
           </div>
         </div>
       </div>

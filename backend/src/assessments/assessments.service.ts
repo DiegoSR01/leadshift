@@ -1,13 +1,17 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Assessment } from '../entities/assessment.entity';
 import { CreateAssessmentDto } from './dto/assessment.dto';
+import { UserProgress } from '../entities/user-progress.entity';
+import { Module as ModuleEntity } from '../entities/module.entity';
 
 @Injectable()
 export class AssessmentsService {
   constructor(
     @InjectRepository(Assessment) private readonly repo: Repository<Assessment>,
+    @InjectRepository(UserProgress) private readonly progressRepo: Repository<UserProgress>,
+    @InjectRepository(ModuleEntity) private readonly moduleRepo: Repository<ModuleEntity>,
   ) {}
 
   async create(userId: string, dto: CreateAssessmentDto) {
@@ -17,6 +21,22 @@ export class AssessmentsService {
     });
     if (existing) {
       throw new ConflictException(`Ya existe un ${dto.type} para este usuario`);
+    }
+
+    // Postest is only allowed when all unlocked modules are completed
+    if (dto.type === 'postest') {
+      const hasPretest = await this.repo.findOne({ where: { userId, type: 'pretest' } });
+      if (!hasPretest) {
+        throw new ForbiddenException('Debes completar el Pretest antes de realizar el Postest');
+      }
+      const modules = await this.moduleRepo.find({ where: { locked: false } });
+      const progressList = await this.progressRepo.find({ where: { userId } });
+      const allCompleted = modules.every((m) =>
+        progressList.some((p) => p.moduleId === m.id && p.status === 'Completado'),
+      );
+      if (!allCompleted) {
+        throw new ForbiddenException('Debes completar todos los módulos antes de realizar el Postest');
+      }
     }
 
     const assessment = this.repo.create({ userId, ...dto });
@@ -56,6 +76,32 @@ export class AssessmentsService {
       pretest: pretest?.scores ?? null,
       postest: postest?.scores ?? null,
       improvements,
+    };
+  }
+
+  /**
+   * Returns pretest / postest completion flags and postest eligibility.
+   */
+  async getStatus(userId: string) {
+    const assessments = await this.findByUser(userId);
+    const pretest = assessments.find((a) => a.type === 'pretest');
+    const postest = assessments.find((a) => a.type === 'postest');
+
+    let postestEligible = false;
+    if (pretest && !postest) {
+      const modules = await this.moduleRepo.find({ where: { locked: false } });
+      const progressList = await this.progressRepo.find({ where: { userId } });
+      postestEligible = modules.every((m) =>
+        progressList.some((p) => p.moduleId === m.id && p.status === 'Completado'),
+      );
+    }
+
+    return {
+      pretestCompleted: !!pretest,
+      postestCompleted: !!postest,
+      postestEligible,
+      pretestCompletedAt: pretest?.completedAt ?? null,
+      postestCompletedAt: postest?.completedAt ?? null,
     };
   }
 }

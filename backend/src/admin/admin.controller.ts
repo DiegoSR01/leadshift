@@ -28,6 +28,15 @@ export class AdminController {
   }
 
   /**
+   * Pretest vs Postest comparison for a specific student.
+   * GET /api/admin/assessments/compare/:userId
+   */
+  @Get('assessments/compare/:userId')
+  getComparisonForUser(@Param('userId', ParseUUIDPipe) userId: string) {
+    return this.adminService.getComparisonForUser(userId);
+  }
+
+  /**
    * Group CSV export — streams a UTF-8 CSV compatible with Excel / SPSS.
    * GET /api/admin/reports/csv
    */

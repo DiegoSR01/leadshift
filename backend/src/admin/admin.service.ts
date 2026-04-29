@@ -540,4 +540,53 @@ export class AdminService {
 
     doc.end();
   }
+
+  // ── Individual assessment comparison ───────────────────────────────────────
+
+  /**
+   * Returns the full pretest/postest comparison for a specific user,
+   * including per-skill deltas and improvement percentages.
+   */
+  async getComparisonForUser(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Alumno no encontrado');
+
+    const assessments = await this.assessmentRepo.find({ where: { userId }, order: { completedAt: 'ASC' } });
+    const pretest = assessments.find((a) => a.type === 'pretest');
+    const postest = assessments.find((a) => a.type === 'postest');
+
+    const improvements: Record<string, { before: number; after: number; delta: number; pctChange: number }> = {};
+    if (pretest && postest) {
+      for (const skill of Object.keys(pretest.scores)) {
+        const before = pretest.scores[skill] ?? 0;
+        const after = postest.scores[skill] ?? 0;
+        improvements[skill] = {
+          before,
+          after,
+          delta: after - before,
+          pctChange: before > 0 ? Math.round(((after - before) / before) * 100) : 0,
+        };
+      }
+    }
+
+    const pretestAvg = pretest ? avgScores(pretest.scores) : null;
+    const postestAvg = postest ? avgScores(postest.scores) : null;
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        career: user.career,
+        semester: user.semester,
+      },
+      pretest: pretest ? { scores: pretest.scores, avg: pretestAvg, completedAt: pretest.completedAt } : null,
+      postest: postest ? { scores: postest.scores, avg: postestAvg, completedAt: postest.completedAt } : null,
+      improvements,
+      avgImprovement:
+        pretestAvg !== null && postestAvg !== null && pretestAvg > 0
+          ? Math.round(((postestAvg - pretestAvg) / pretestAvg) * 100)
+          : null,
+    };
+  }
 }

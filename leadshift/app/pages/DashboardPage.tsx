@@ -67,6 +67,13 @@ export function DashboardPage() {
   const moduleProgress = dashboard?.moduleProgress || [];
   const kpis = dashboard?.kpis || { streak: 0, xp: 0, modulesCompleted: 0, totalModules: 0, avgScore: 0 };
   const userName = user?.name?.split(' ')[0] || 'Estudiante';
+
+  const currentWeek = Math.min(12, Math.max(1, Math.ceil(
+    (Date.now() - new Date(user?.createdAt || Date.now()).getTime()) / (7 * 24 * 60 * 60 * 1000)
+  )));
+  const scoreImprovement = progressData.length >= 2
+    ? progressData[progressData.length - 1].score - progressData[0].score
+    : 0;
   const initials = user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
 
   if (loading) {
@@ -189,7 +196,7 @@ export function DashboardPage() {
               </div>
               <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 text-xs font-medium px-3 py-1.5 rounded-lg">
                 <Target className="w-3.5 h-3.5" />
-                Semana 8
+                Semana {currentWeek}
               </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>
@@ -210,7 +217,7 @@ export function DashboardPage() {
               </div>
               <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-xs font-medium px-3 py-1.5 rounded-lg">
                 <TrendingUp className="w-3.5 h-3.5" />
-                +37 pts
+                {scoreImprovement >= 0 ? '+' : ''}{scoreImprovement} pts
               </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>

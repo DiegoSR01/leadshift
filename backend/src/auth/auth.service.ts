@@ -4,12 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
+import { Assessment } from '../entities/assessment.entity';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Assessment) private readonly assessmentRepo: Repository<Assessment>,
     private readonly jwt: JwtService,
   ) {}
 
@@ -52,7 +54,13 @@ export class AuthService {
 
   async getProfile(userId: string) {
     const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
-    return this.sanitize(user);
+    const pretest = await this.assessmentRepo.findOne({ where: { userId, type: 'pretest' } });
+    const postest = await this.assessmentRepo.findOne({ where: { userId, type: 'postest' } });
+    return {
+      ...this.sanitize(user),
+      pretestCompleted: !!pretest,
+      postestCompleted: !!postest,
+    };
   }
 
   /** One-time admin setup — only works while there are NO admins in the DB */

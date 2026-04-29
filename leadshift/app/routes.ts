@@ -13,6 +13,9 @@ import { ProgressPage } from './pages/ProgressPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResultsPage } from './pages/ResultsPage';
 import { AdminReportsPage } from './pages/AdminReportsPage';
+import { PretestPage } from './pages/PretestPage';
+import { PostestPage } from './pages/PostestPage';
+import { RequirePretest } from './components/RequirePretest';
 
 export const router = createBrowserRouter([
   { path: '/', Component: LandingPage },
@@ -25,10 +28,18 @@ export const router = createBrowserRouter([
       Component: AppLayout,
       children: [
       { index: true, Component: DashboardPage },
-      { path: 'modules', Component: ModulesPage },
-      { path: 'modules/leadership', Component: LeadershipModulePage },
-      { path: 'modules/oral', Component: OralCommunicationPage },
-      { path: 'modules/written', Component: WrittenCommunicationPage },
+      { path: 'pretest', Component: PretestPage },
+      { path: 'postest', Component: PostestPage },
+      // Module routes — blocked until Pretest is completed
+      {
+        Component: RequirePretest,
+        children: [
+          { path: 'modules', Component: ModulesPage },
+          { path: 'modules/leadership', Component: LeadershipModulePage },
+          { path: 'modules/oral', Component: OralCommunicationPage },
+          { path: 'modules/written', Component: WrittenCommunicationPage },
+        ],
+      },
       { path: 'progress', Component: ProgressPage },
       { path: 'profile', Component: ProfilePage },
       { path: 'results', Component: ResultsPage },

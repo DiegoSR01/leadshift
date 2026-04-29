@@ -75,12 +75,13 @@ export class DashboardService {
     const pretest = assessments.find((a) => a.type === 'pretest');
     const postest = assessments.find((a) => a.type === 'postest');
 
-    // Radar data
+    // Radar data — include `score` (current level) for the dashboard radar chart
     const radarData = pretest
       ? Object.keys(pretest.scores).map((skill) => ({
           skill,
+          score: postest?.scores[skill] ?? pretest.scores[skill] ?? 0,
           pretest: pretest.scores[skill] ?? 0,
-          postest: postest?.scores[skill] ?? pretest.scores[skill] ?? 0,
+          postest: postest?.scores[skill] ?? null,
         }))
       : [];
 
