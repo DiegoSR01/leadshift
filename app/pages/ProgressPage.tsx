@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
@@ -8,55 +9,68 @@ import {
   ChevronRight, TrendingUp, Trophy, Target, BarChart3,
   CheckCircle, Calendar, Star, Zap, ArrowUp,
 } from 'lucide-react';
-
-const pretestData = [
-  { skill: 'Liderazgo', pretest: 45, postest: 72 },
-  { skill: 'Com. Oral', pretest: 40, postest: 65 },
-  { skill: 'Escritura', pretest: 52, postest: 78 },
-  { skill: 'Equipos', pretest: 60, postest: 80 },
-  { skill: 'Síntesis', pretest: 38, postest: 60 },
-  { skill: 'Resolución', pretest: 48, postest: 70 },
-];
-
-const weeklyProgress = [
-  { week: 'S1', liderazgo: 45, oral: 40, escritura: 52 },
-  { week: 'S2', liderazgo: 50, oral: 45, escritura: 58 },
-  { week: 'S3', liderazgo: 55, oral: 48, escritura: 62 },
-  { week: 'S4', liderazgo: 58, oral: 52, escritura: 65 },
-  { week: 'S5', liderazgo: 63, oral: 55, escritura: 70 },
-  { week: 'S6', liderazgo: 67, oral: 58, escritura: 73 },
-  { week: 'S7', liderazgo: 70, oral: 62, escritura: 76 },
-  { week: 'S8', liderazgo: 72, oral: 65, escritura: 78 },
-];
-
-const moduleScores = [
-  { module: 'Liderazgo S.', score: 82, attempts: 7, best: 95 },
-  { module: 'Com. Oral', score: 78, attempts: 4, best: 85 },
-  { module: 'Escritura', score: 86, attempts: 8, best: 92 },
-];
-
-const radarPretest = pretestData.map((d) => ({ skill: d.skill, score: d.pretest }));
-const radarPostest = pretestData.map((d) => ({ skill: d.skill, score: d.postest }));
-
-const xpHistory = [
-  { date: '12 Feb', xp: 0 },
-  { date: '19 Feb', xp: 180 },
-  { date: '26 Feb', xp: 420 },
-  { date: '5 Mar', xp: 650 },
-  { date: '12 Mar', xp: 920 },
-  { date: '19 Mar', xp: 1240 },
-];
-
-const achievements = [
-  { title: 'Primer escenario', desc: 'Completaste tu primer escenario', icon: '🎯', earned: true, date: '12 Feb' },
-  { title: 'Racha de 7 días', desc: '7 días de práctica consecutiva', icon: '🔥', earned: true, date: '15 Mar' },
-  { title: 'Líder en formación', desc: 'Alcanza nivel 4', icon: '⭐', earned: true, date: '1 Mar' },
-  { title: 'Comunicador efectivo', desc: 'Puntaje >85 en Com. Oral', icon: '🎤', earned: false, date: null },
-  { title: 'Escritor técnico', desc: 'Completa todos los ejercicios escritos', icon: '✍️', earned: false, date: null },
-  { title: 'Maestro del liderazgo', desc: 'Completa los 12 escenarios', icon: '🏆', earned: false, date: null },
-];
+import { api } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export function ProgressPage() {
+  const { user } = useAuth();
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.dashboard.analytics().then(setAnalytics).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="text-slate-400">Cargando progreso...</div></div>;
+  }
+
+  // === Map analytics API response to view model ===
+  const kpis = analytics?.kpis || {};
+
+  // Pretest vs Postest comparison
+  const skillImprovements = analytics?.skillImprovements || {};
+  const pretestData = Object.entries(skillImprovements).map(([skill, val]: [string, any]) => ({
+    skill,
+    pretest: val.before ?? 0,
+    postest: val.after ?? 0,
+  }));
+
+  const weeklyProgress = (analytics?.weeklyProgress || []).map((w: any) => ({
+    week: w.week,
+    liderazgo: w.leadership ?? w.liderazgo ?? w.avgScore ?? 0,
+    oral: w.oral ?? w.avgScore ?? 0,
+    escritura: w.written ?? w.escritura ?? w.avgScore ?? 0,
+  }));
+
+  // Module performance → module scores
+  const modulePerformance = analytics?.modulePerformance || [];
+  const moduleScores = modulePerformance.map((m: any) => ({
+    module: m.title || m.moduleId,
+    score: m.avgScore ?? 0,
+    attempts: m.attempts ?? 0,
+    best: m.bestScore ?? 0,
+  }));
+
+  // XP history from weekly progress
+  const xpHistory = (analytics?.weeklyProgress || []).map((w: any) => ({
+    date: w.week,
+    xp: w.xp ?? w.avgScore ?? 0,
+  }));
+
+  // Stats
+  const totalExercises = modulePerformance.reduce((s: number, m: any) => s + (m.attempts ?? 0), 0);
+  const totalModuleCount = analytics?.kpis?.totalModules ?? modulePerformance.length;
+  const bestModule = modulePerformance.reduce((best: any, m: any) => (!best || (m.bestScore ?? 0) > (best.bestScore ?? 0) ? m : best), null);
+  const improvement = analytics?.avgImprovement ? `${analytics.avgImprovement}%` : '0%';
+
+  const achievements = (analytics?.achievements || []).map((a: any) => ({
+    icon: a.icon || '🏅',
+    title: a.title,
+    desc: a.description,
+    earned: a.earned,
+    date: a.earnedAt ? new Date(a.earnedAt).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' }) : null,
+  }));
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -73,7 +87,9 @@ export function ProgressPage() {
           </div>
           <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-violet-50 border border-blue-100 rounded-xl px-4 py-2.5">
             <Calendar className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-slate-700">Semana 8 de 12</span>
+            <span className="text-sm font-medium text-slate-700">
+              Semana {Math.min(12, Math.max(1, Math.ceil((Date.now() - new Date(user?.createdAt || Date.now()).getTime()) / (7 * 24 * 60 * 60 * 1000))))} de 12
+            </span>
           </div>
         </div>
       </div>
@@ -82,10 +98,10 @@ export function ProgressPage() {
         {/* KPI cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { icon: TrendingUp, label: 'Mejora promedio', value: '+34%', sub: 'vs pretest inicial', color: 'text-emerald-500 bg-emerald-50', trend: '+34%' },
-            { icon: Zap, label: 'XP acumulados', value: '1,240', sub: '+42 esta semana', color: 'text-blue-500 bg-blue-50', trend: null },
-            { icon: CheckCircle, label: 'Ejercicios completados', value: '19/32', sub: '59% del programa', color: 'text-violet-500 bg-violet-50', trend: null },
-            { icon: Trophy, label: 'Mejor puntaje', value: '95/100', sub: 'Liderazgo · Escenario 1', color: 'text-amber-500 bg-amber-50', trend: null },
+            { icon: TrendingUp, label: 'Mejora promedio', value: improvement, sub: 'vs pretest inicial', color: 'text-emerald-500 bg-emerald-50', trend: analytics?.avgImprovement },
+            { icon: Zap, label: 'XP acumulados', value: String(user?.xp || kpis.xp || 0), sub: 'Total', color: 'text-blue-500 bg-blue-50', trend: null },
+            { icon: CheckCircle, label: 'Ejercicios completados', value: `${totalExercises}/${totalModuleCount * 5}`, sub: `${totalModuleCount > 0 ? Math.round((totalExercises / (totalModuleCount * 5)) * 100) : 0}% del programa`, color: 'text-violet-500 bg-violet-50', trend: null },
+            { icon: Trophy, label: 'Mejor puntaje', value: String(bestModule?.bestScore ?? 0), sub: bestModule?.title ?? '', color: 'text-amber-500 bg-amber-50', trend: null },
           ].map((kpi, i) => {
             const Icon = kpi.icon;
             return (
@@ -144,9 +160,9 @@ export function ProgressPage() {
 
             {/* Delta table */}
             <div className="space-y-3">
-              {pretestData.map((d) => {
-                const delta = d.postest - d.pretest;
-                const pct = Math.round((delta / d.pretest) * 100);
+              {pretestData.map((d: any) => {
+                const delta = (d.postest || 0) - (d.pretest || 0);
+                const pct = d.pretest > 0 ? Math.round((delta / d.pretest) * 100) : 0;
                 return (
                   <div key={d.skill} className="flex items-center gap-3">
                     <div className="w-28 text-sm font-medium text-slate-700">{d.skill}</div>
@@ -212,7 +228,7 @@ export function ProgressPage() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <h3 className="font-bold text-slate-900 mb-5">Rendimiento por módulo</h3>
           <div className="grid md:grid-cols-3 gap-5">
-            {moduleScores.map((mod, i) => {
+            {moduleScores.map((mod: any, i: number) => {
               const colors = [
                 { grad: 'from-blue-500 to-blue-700', bg: 'bg-blue-50', text: 'text-blue-600' },
                 { grad: 'from-violet-500 to-violet-700', bg: 'bg-violet-50', text: 'text-violet-600' },
@@ -242,7 +258,7 @@ export function ProgressPage() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <h3 className="font-bold text-slate-900 mb-5">Logros y badges</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {achievements.map((ach, i) => (
+            {achievements.map((ach: any, i: number) => (
               <div key={i} className={`rounded-2xl p-4 text-center transition-all ${ach.earned ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200' : 'bg-slate-50 border border-slate-100 opacity-50 grayscale'}`}>
                 <div className="text-3xl mb-2">{ach.icon}</div>
                 <div className="text-xs font-bold text-slate-900 mb-1">{ach.title}</div>

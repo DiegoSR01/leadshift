@@ -151,11 +151,29 @@ export const api = {
 
   // ─── Assessments ───────────────────────────
   assessments: {
+    /** Submit a pretest or postest (primary endpoint) */
+    submit: (type: 'pretest' | 'postest', scores: Record<string, number>) =>
+      request<any>('/assessments/submit', {
+        method: 'POST',
+        body: JSON.stringify({ type, scores }),
+      }),
+
+    /** Legacy alias – same as submit */
     create: (type: 'pretest' | 'postest', scores: Record<string, number>) =>
       request<any>('/assessments', {
         method: 'POST',
         body: JSON.stringify({ type, scores }),
       }),
+
+    /** Returns { pretestCompleted, postestCompleted, postestEligible, ... } */
+    status: () => request<{
+      pretestCompleted: boolean;
+      postestCompleted: boolean;
+      postestEligible: boolean;
+      pretestCompletedAt: string | null;
+      postestCompletedAt: string | null;
+    }>('/assessments/status'),
+
     list: () => request<any[]>('/assessments'),
     comparison: () => request<any>('/assessments/comparison'),
   },
@@ -199,6 +217,9 @@ export const api = {
           `leadshift-reporte-${userName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.pdf`,
         ),
     },
+
+    /** Pretest vs Postest comparison for a specific student (admin only) */
+    compareUser: (userId: string) => request<any>(`/admin/assessments/compare/${encodeURIComponent(userId)}`),
   },
 
   // ─── Transcription (Whisper) ───────────────

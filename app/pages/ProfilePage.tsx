@@ -1,46 +1,71 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import {
   ChevronRight, User, Mail, BookOpen, GraduationCap,
   Star, Trophy, Flame, Target, Edit3, Save, X,
   Shield, Bell, Globe, Lock, CheckCircle,
 } from 'lucide-react';
+import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
-const staticData = {
-  level: 4,
-  levelName: 'Líder en Formación',
-  xp: 1240,
-  nextLevelXp: 1900,
-  streak: 7,
-  modules: [
-    { name: 'Liderazgo Situacional', progress: 65, color: 'bg-blue-500' },
-    { name: 'Comunicación Oral', progress: 40, color: 'bg-violet-500' },
-    { name: 'Comunicación Escrita', progress: 80, color: 'bg-cyan-500' },
-  ],
-  badges: ['🎯', '🔥', '⭐', '📚'],
-};
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
 export function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(user?.name || '');
+  const [name, setName] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
   const [notif, setNotif] = useState(true);
   const [emailDigest, setEmailDigest] = useState(false);
   const [publicProfile, setPublicProfile] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const displayName = name || user?.name || 'Usuario';
-  const avatar = getInitials(displayName);
-  const xpPercent = (staticData.xp / staticData.nextLevelXp) * 100;
+  useEffect(() => {
+    api.users.me().then((data) => {
+      setProfile(data);
+      setName(data.name || '');
+      if (data.settings) {
+        setNotif(data.settings.notifications ?? true);
+        setEmailDigest(data.settings.emailDigest ?? false);
+        setPublicProfile(data.settings.publicProfile ?? true);
+      }
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.users.update({ name, settings: { notifications: notif, emailDigest, publicProfile } });
+      await refreshUser();
+      setEditing(false);
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await api.users.update({ settings: { notifications: notif, emailDigest, publicProfile } });
+      await refreshUser();
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  if (loading || !profile) {
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="text-slate-400">Cargando perfil...</div></div>;
+  }
+
+  const xp = user?.xp ?? profile.xp ?? 0;
+  const levelInfo = profile.levelInfo || {};
+  const nextLevelXp = levelInfo.nextLevelXp ?? 1900;
+  const xpPercent = nextLevelXp > 0 ? (xp / nextLevelXp) * 100 : 0;
+  const level = levelInfo.level ?? user?.level ?? profile.level ?? 1;
+  const levelName = levelInfo.name ?? user?.levelName ?? 'Principiante';
+  const avatar = name ? name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'U';
+  const modules = profile.modules || [];
+  const badges = profile.badges || [];
+  const streak = profile.streak ?? 0;
+  const joinDate = profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -78,10 +103,10 @@ export function ProfilePage() {
                     onChange={(e) => setName(e.target.value)}
                     className="bg-white/10 border border-white/30 text-white rounded-xl px-3 py-1.5 text-xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
-                  <button onClick={() => setEditing(false)} className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                  <button onClick={handleSave} disabled={saving} className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                     <Save className="w-4 h-4 text-white" />
                   </button>
-                  <button onClick={() => { setEditing(false); setName(user?.name || ''); }} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+                  <button onClick={() => { setEditing(false); setName(profile.name); }} className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
                     <X className="w-4 h-4 text-white" />
                   </button>
                 </div>
@@ -93,19 +118,19 @@ export function ProfilePage() {
                   </button>
                 </div>
               )}
-              <p className="text-blue-300 text-sm mb-3">{user?.career || ''}{user?.university ? ` · ${user.university}` : ''}</p>
+              <p className="text-blue-300 text-sm mb-3">{profile.career || 'Ingeniería'} · {profile.university || 'ITToluca'}</p>
 
               {/* Level badge */}
               <div className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl mb-4">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                <span className="text-white text-sm font-medium">Nivel {staticData.level} · {staticData.levelName}</span>
+                <span className="text-white text-sm font-medium">Nivel {level} · {levelName}</span>
               </div>
 
               {/* XP bar */}
               <div className="mb-2">
                 <div className="flex justify-between text-xs text-blue-300 mb-1.5">
-                  <span>{staticData.xp} XP</span>
-                  <span>{staticData.nextLevelXp} XP para Nivel {staticData.level + 1}</span>
+                  <span>{xp} XP</span>
+                  <span>{nextLevelXp} XP para Nivel {level + 1}</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2.5">
                   <div
@@ -119,9 +144,9 @@ export function ProfilePage() {
             {/* Quick stats */}
             <div className="hidden md:flex gap-4">
               {[
-                { icon: Flame, value: `${staticData.streak}`, label: 'días racha', color: 'text-orange-400' },
-                { icon: Trophy, value: '3', label: 'logros', color: 'text-yellow-400' },
-                { icon: Target, value: '19', label: 'ejercicios', color: 'text-blue-400' },
+                { icon: Flame, value: `${streak}`, label: 'días racha', color: 'text-orange-400' },
+                { icon: Trophy, value: `${badges.length}`, label: 'logros', color: 'text-yellow-400' },
+                { icon: Target, value: `${profile.exercisesCompleted ?? 0}`, label: 'ejercicios', color: 'text-blue-400' },
               ].map((s, i) => {
                 const Icon = s.icon;
                 return (
@@ -157,12 +182,12 @@ export function ProfilePage() {
                 <h3 className="font-bold text-slate-900 mb-5">Información académica</h3>
                 <div className="grid sm:grid-cols-2 gap-5">
                   {[
-                    { icon: User, label: 'Nombre completo', value: displayName },
-                    { icon: Mail, label: 'Correo electrónico', value: user?.email || '' },
-                    { icon: GraduationCap, label: 'Universidad', value: user?.university || '' },
-                    { icon: BookOpen, label: 'Carrera', value: user?.career || '' },
-                    { icon: Target, label: 'Semestre', value: user?.semester ? `Semestre ${user.semester}` : '' },
-                    { icon: Star, label: 'Nivel', value: `${staticData.level} · ${staticData.levelName}` },
+                    { icon: User, label: 'Nombre completo', value: name },
+                    { icon: Mail, label: 'Correo electrónico', value: profile.email || '' },
+                    { icon: GraduationCap, label: 'Universidad', value: profile.university || 'ITToluca' },
+                    { icon: BookOpen, label: 'Carrera', value: profile.career || '' },
+                    { icon: Target, label: 'Semestre', value: `Semestre ${profile.semester || ''}` },
+                    { icon: Star, label: 'Miembro desde', value: joinDate },
                   ].map((field, i) => {
                     const Icon = field.icon;
                     return (
@@ -182,7 +207,7 @@ export function ProfilePage() {
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                 <h3 className="font-bold text-slate-900 mb-5">Progreso en módulos</h3>
                 <div className="space-y-4">
-                  {staticData.modules.map((mod) => (
+                  {modules.map((mod: any) => (
                     <div key={mod.name}>
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-medium text-slate-700">{mod.name}</span>
@@ -202,12 +227,12 @@ export function ProfilePage() {
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                 <h3 className="font-bold text-slate-900 mb-4">Badges obtenidos</h3>
                 <div className="grid grid-cols-3 gap-3">
-                  {staticData.badges.map((badge, i) => (
+                  {badges.map((badge: string, i: number) => (
                     <div key={i} className="w-full aspect-square bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-100 rounded-2xl flex items-center justify-center text-3xl">
                       {badge}
                     </div>
                   ))}
-                  {[...Array(3 - (staticData.badges.length % 3 || 3))].map((_, i) => (
+                  {[...Array(Math.max(0, 3 - (badges.length % 3 || 3)))].map((_, i) => (
                     <div key={`empty-${i}`} className="w-full aspect-square bg-slate-50 border border-slate-100 border-dashed rounded-2xl flex items-center justify-center text-slate-300 text-2xl">
                       +
                     </div>
@@ -218,11 +243,11 @@ export function ProfilePage() {
               <div className="bg-gradient-to-br from-blue-50 to-violet-50 border border-blue-100 rounded-2xl p-5">
                 <h3 className="font-bold text-slate-900 mb-3">Nivel actual</h3>
                 <div className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent mb-1">
-                  {staticData.level}
+                  {level}
                 </div>
-                <div className="text-slate-700 font-semibold mb-3">{staticData.levelName}</div>
+                <div className="text-slate-700 font-semibold mb-3">{levelName}</div>
                 <div className="text-slate-500 text-xs">
-                  Te faltan <strong className="text-blue-600">{staticData.nextLevelXp - staticData.xp} XP</strong> para el siguiente nivel
+                  Te faltan <strong className="text-blue-600">{nextLevelXp - xp} XP</strong> para el siguiente nivel
                 </div>
               </div>
             </div>
@@ -301,6 +326,17 @@ export function ProfilePage() {
               </div>
               <button className="w-full border border-blue-200 text-blue-600 text-sm font-medium py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
                 Ver política de privacidad
+              </button>
+            </div>
+
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                onClick={handleSaveSettings}
+                disabled={saving}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 text-sm"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Guardando...' : 'Guardar configuración'}
               </button>
             </div>
           </div>

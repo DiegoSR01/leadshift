@@ -8,11 +8,7 @@ export function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="text-slate-400 text-sm">Cargando...</div>
-      </div>
-    );
+    return <div className="flex h-screen items-center justify-center bg-slate-50"><div className="text-slate-400">Cargando...</div></div>;
   }
 
   if (!user) {
@@ -25,7 +21,10 @@ export function AppLayout() {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      <main className="flex-1 overflow-y-auto transition-all duration-300">
+      <main
+        className="flex-1 overflow-y-auto transition-all duration-300"
+        style={{ marginLeft: sidebarCollapsed ? '0' : '0' }}
+      >
         <Outlet />
       </main>
     </div>
