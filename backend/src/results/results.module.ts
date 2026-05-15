@@ -16,7 +16,6 @@ import { UsersModule } from '../users/users.module';
     EvaluationModule,
     GamificationModule,
     UsersModule,
-    UsersModule,
   ],
   controllers: [ResultsController],
   providers: [ResultsService],

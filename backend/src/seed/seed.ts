@@ -31,8 +31,8 @@ async function seed() {
 
   // ─── Clear existing data (ignore if tables don't exist yet) ───
   const tables = [
-    'user_achievements', 'result', 'user_progress', 'assessment',
-    'scenario', 'exercise', 'achievements', 'module', 'user',
+    'user_achievements', 'results', 'user_progress', 'assessments',
+    'scenarios', 'exercises', 'achievements', 'modules', 'users',
   ];
   for (const t of tables) {
     await AppDataSource.query(`DELETE FROM "${t}"`).catch(() => {});
